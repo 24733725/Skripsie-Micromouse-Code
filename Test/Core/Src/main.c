@@ -122,13 +122,14 @@ int main(void)
   HAL_Delay(3000);
   USB_transmit("Hi!");
   char buff[16];
+//  forward(100);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  sprintf(buff, "%d",(int)htim3.Instance->CNT);
+	  sprintf(buff, "L:%d R:%d",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT);
 	  USB_transmit(buff);//this is blocking
 //	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 800);
 	  HAL_Delay(1000);
@@ -603,11 +604,11 @@ static void MX_TIM5_Init(void)
   htim5.Instance = TIM5;
   htim5.Init.Prescaler = 0;
   htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim5.Init.Period = 4294967295;
+  htim5.Init.Period = 65535;
   htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  sConfig.EncoderMode = TIM_ENCODERMODE_TI1;
-  sConfig.IC1Polarity = TIM_ICPOLARITY_RISING;
+  sConfig.EncoderMode = TIM_ENCODERMODE_TI12;
+  sConfig.IC1Polarity = TIM_ICPOLARITY_FALLING;
   sConfig.IC1Selection = TIM_ICSELECTION_DIRECTTI;
   sConfig.IC1Prescaler = TIM_ICPSC_DIV1;
   sConfig.IC1Filter = 0;

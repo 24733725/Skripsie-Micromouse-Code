@@ -15,7 +15,7 @@ extern TIM_HandleTypeDef htim5;
 
 
 void motorsInit(){
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+
 	  //Motor 1
 	  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 	  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
@@ -30,11 +30,10 @@ void motorsInit(){
 
 	  //Encoder 1
 	  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_ALL);
-//	  HAL_TIM_Encoder_Start(&htim3, TIM_CHANNEL_2);
 
 	  //Encoder 2
 	  HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_ALL);
-//	  HAL_TIM_Encoder_Start(&htim5, TIM_CHANNEL_2);
+
 }
 void forward(int16_t power){ // -1000 < power < 1000
 	if (power>1000) power = 1000;
