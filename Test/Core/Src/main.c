@@ -22,9 +22,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usbd_cdc.h"
-#include <string.h>
-#include <stdio.h>
+#include "USB_comms.h"
+#include "motor_control.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -87,8 +86,7 @@ static void MX_TIM2_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	char text_buffer[32];
-	sprintf(text_buffer, "Status!\r\n" );
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -120,22 +118,34 @@ int main(void)
   MX_TIM2_Init();
   MX_USB_DEVICE_Init();
   /* USER CODE BEGIN 2 */
-
+  motorsInit();
+  HAL_Delay(3000);
+  USB_transmit("Hi!");
+  char buff[16];
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  CDC_Transmit_FS((uint8_t *)text_buffer, strlen(text_buffer));
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-	  HAL_Delay(100);
-	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+	  sprintf(buff, "%d",(int)htim3.Instance->CNT);
+	  USB_transmit(buff);//this is blocking
+//	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 800);
 	  HAL_Delay(1000);
+//	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+//	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 200);
+//	  HAL_Delay(1000);
+//	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+//	  USB_transmit("Haai\n");
+//	  USB_receive();
+//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+//	  HAL_Delay(100);
+//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+//	  HAL_Delay(100);
+//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
+//	  HAL_Delay(100);
+//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
+//	  HAL_Delay(1000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -402,9 +412,9 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 15;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
+  htim1.Init.Period = 1000;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -480,9 +490,9 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 15;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 4294967295;
+  htim2.Init.Period = 1000;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim2) != HAL_OK)
