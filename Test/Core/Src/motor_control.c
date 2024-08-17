@@ -23,8 +23,8 @@ void motorsInit(){
 	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
 
 	  //Motor 2
+	  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
 	  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
-	  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
 	  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 	  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 

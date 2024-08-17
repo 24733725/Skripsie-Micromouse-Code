@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "USB_comms.h"
 #include "motor_control.h"
+#include "globals.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,10 +53,11 @@ SPI_HandleTypeDef hspi1;
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
 /* USER CODE BEGIN PV */
-
+extern uint8_t control_loop_flag;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -70,6 +72,7 @@ static void MX_TIM3_Init(void);
 static void MX_TIM5_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
+static void MX_TIM4_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -117,36 +120,37 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM2_Init();
   MX_USB_DEVICE_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   motorsInit();
+  HAL_ADC_Start(&hadc1);
   HAL_Delay(3000);
   USB_transmit("Hi!");
-  char buff[16];
-//  forward(100);
+  char buff[32];
+//  forward(500);
+//  HAL_Delay(5000);
+//  forward(0);
+  HAL_I2C_Mem_Read(&hi2c1, TOF_ADDRESS, 0x0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)buff, 16, 1000);
+  USB_transmit(buff);//this is blocking
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  sprintf(buff, "L:%d R:%d",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT);
+//	  sprintf(buff, "L:%d R:%d V:%d",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT, (int)HAL_ADC_GetValue(&hadc1));
+//	  sprintf(buff, "L:%d R:%d",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT );
 	  USB_transmit(buff);//this is blocking
-//	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 800);
+	  sprintf(buff, "%d",(int)HAL_I2C_GetError(&hi2c1));
 	  HAL_Delay(1000);
-//	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-//	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 200);
-//	  HAL_Delay(1000);
-//	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
-//	  USB_transmit("Haai\n");
+
 //	  USB_receive();
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-//	  HAL_Delay(100);
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
-//	  HAL_Delay(100);
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 0);
-//	  HAL_Delay(100);
-//	  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_13, 1);
-//	  HAL_Delay(1000);
+// main control loop:
+	  if (control_loop_flag ==1){
+		  control_loop_flag = 0;
+
+
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -268,7 +272,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.ClockSpeed = 400000;
   hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -302,7 +306,7 @@ static void MX_I2C2_Init(void)
 
   /* USER CODE END I2C2_Init 1 */
   hi2c2.Instance = I2C2;
-  hi2c2.Init.ClockSpeed = 100000;
+  hi2c2.Init.ClockSpeed = 400000;
   hi2c2.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c2.Init.OwnAddress1 = 0;
   hi2c2.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -336,7 +340,7 @@ static void MX_I2C3_Init(void)
 
   /* USER CODE END I2C3_Init 1 */
   hi2c3.Instance = I2C3;
-  hi2c3.Init.ClockSpeed = 100000;
+  hi2c3.Init.ClockSpeed = 400000;
   hi2c3.Init.DutyCycle = I2C_DUTYCYCLE_2;
   hi2c3.Init.OwnAddress1 = 0;
   hi2c3.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
@@ -372,7 +376,7 @@ static void MX_SPI1_Init(void)
   /* SPI1 parameter configuration*/
   hspi1.Instance = SPI1;
   hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
+  hspi1.Init.Direction = SPI_DIRECTION_1LINE;
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
@@ -580,6 +584,51 @@ static void MX_TIM3_Init(void)
   /* USER CODE BEGIN TIM3_Init 2 */
 
   /* USER CODE END TIM3_Init 2 */
+
+}
+
+/**
+  * @brief TIM4 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM4_Init(void)
+{
+
+  /* USER CODE BEGIN TIM4_Init 0 */
+
+  /* USER CODE END TIM4_Init 0 */
+
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+
+  /* USER CODE BEGIN TIM4_Init 1 */
+
+  /* USER CODE END TIM4_Init 1 */
+  htim4.Instance = TIM4;
+  htim4.Init.Prescaler = 15999;
+  htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim4.Init.Period = 10;
+  htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim4.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim4, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim4, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM4_Init 2 */
+
+  /* USER CODE END TIM4_Init 2 */
 
 }
 

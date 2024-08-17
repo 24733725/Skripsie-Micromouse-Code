@@ -13,7 +13,7 @@ extern char usb_send_buffer[32];
 extern char usb_receive_buffer[32];
 
 void USB_transmit(char * s){
-	sprintf(usb_send_buffer, "%s\r\n", s );
+	sprintf(usb_send_buffer, "%x\r\n", s );
 	CDC_Transmit_FS((uint8_t *)usb_send_buffer, strlen(usb_send_buffer));
 }
 
