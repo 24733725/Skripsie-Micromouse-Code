@@ -18,13 +18,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "usb_device.h"
+#include "fatfs.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "USB_comms.h"
+#include "stdio.h"
 #include "motor_control.h"
 #include "globals.h"
+#include "string.h"
+#include "uart_driver.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,8 +58,11 @@ TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim4;
 TIM_HandleTypeDef htim5;
 
+UART_HandleTypeDef huart2;
+
 /* USER CODE BEGIN PV */
 extern uint8_t control_loop_flag;
+extern char send_buffer[32];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -73,6 +78,7 @@ static void MX_TIM5_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_TIM4_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -119,32 +125,34 @@ int main(void)
   MX_TIM5_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
-  MX_USB_DEVICE_Init();
   MX_TIM4_Init();
+  MX_FATFS_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   motorsInit();
+  uart_startup_transmit();
   HAL_ADC_Start(&hadc1);
   HAL_Delay(3000);
-  USB_transmit("Hi!");
-  char buff[32];
+
+
 //  forward(500);
 //  HAL_Delay(5000);
-//  forward(0);
-  HAL_I2C_Mem_Read(&hi2c1, TOF_ADDRESS, 0x0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)buff, 16, 1000);
-  USB_transmit(buff);//this is blocking
+  forward(0);
+//  HAL_I2C_Mem_Read(&hi2c1, TOF_ADDRESS, 0x0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)buff, 16, 1000);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-//	  sprintf(buff, "L:%d R:%d V:%d",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT, (int)HAL_ADC_GetValue(&hadc1));
-//	  sprintf(buff, "L:%d R:%d",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT );
-	  USB_transmit(buff);//this is blocking
-	  sprintf(buff, "%d",(int)HAL_I2C_GetError(&hi2c1));
-	  HAL_Delay(1000);
-
-//	  USB_receive();
+//	  sprintf(buff, "L:%d R:%d V:%d\n",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT, (int)HAL_ADC_GetValue(&hadc1));
+	  sprintf(send_buffer, "L:%d R:%d\n",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT );
+	  HAL_UART_Transmit_IT(&huart2, (uint8_t *)send_buffer, strlen(send_buffer));
+//	  sprintf(buff, "%d",(int)HAL_I2C_GetError(&hi2c1));
+	  HAL_Delay(20);
+	  HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	  uart_task();
 // main control loop:
 	  if (control_loop_flag ==1){
 		  control_loop_flag = 0;
@@ -178,12 +186,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 16;
-  RCC_OscInitStruct.PLL.PLLN = 192;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 4;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -381,7 +384,7 @@ static void MX_SPI1_Init(void)
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_128;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
@@ -678,6 +681,39 @@ static void MX_TIM5_Init(void)
   /* USER CODE BEGIN TIM5_Init 2 */
 
   /* USER CODE END TIM5_Init 2 */
+
+}
+
+/**
+  * @brief USART2 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART2_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 57600;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
 
 }
 
