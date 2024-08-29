@@ -69,6 +69,8 @@ void Error_Handler(void);
 #define Vbat_IN_GPIO_Port GPIOA
 #define Motor_Enc_1A_Pin GPIO_PIN_6
 #define Motor_Enc_1A_GPIO_Port GPIOA
+#define SPI_CS_Pin GPIO_PIN_12
+#define SPI_CS_GPIO_Port GPIOB
 #define Motor_1_IN1_Pin GPIO_PIN_9
 #define Motor_1_IN1_GPIO_Port GPIOA
 #define Motor_1_IN2_Pin GPIO_PIN_10

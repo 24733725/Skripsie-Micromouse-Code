@@ -16,9 +16,10 @@
 extern UART_HandleTypeDef huart2;
 
 extern char receive_buffer[32];
-extern char send_buffer[32];
+extern char send_buffer[64];
 extern uint8_t message_waiting_flag;
-
+extern int16_t L_speed_setpoint; //mm/s
+extern int16_t R_speed_setpoint;//mm/s
 
 
 void uart_startup_transmit()
@@ -35,7 +36,9 @@ void uart_task()
 	if (message_waiting_flag)
 	{
 		uart_transmit(receive_buffer, strlen(receive_buffer));
-		forward(atoi(receive_buffer));
+//		forward(atoi(receive_buffer));
+//		L_speed_setpoint = atoi(receive_buffer);
+		R_speed_setpoint = atoi(receive_buffer);
 		message_waiting_flag = 0;
 		strcpy(receive_buffer, "\0");
 	}
