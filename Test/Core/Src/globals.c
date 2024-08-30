@@ -21,6 +21,8 @@ int16_t L_ctrl_signal = 0;
 int16_t R_ctrl_signal = 0;
 int32_t L_error = 0;
 int32_t R_error = 0;
+int32_t L_acc_error = 0;
+int32_t R_acc_error = 0;
 
 
 

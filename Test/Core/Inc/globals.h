@@ -15,10 +15,14 @@
 
 #define L_Kp 1
 #define L_Kd 0.01
-#define L_Ki 0.01
+#define L_Ki 1
+#define L_Kff 0.494
+#define L_ff_offset 155.3
 #define R_Kp 1
 #define R_Kd 0.01
-#define R_Ki 0.01
+#define R_Ki 1
+#define R_Kff 0.431
+#define R_ff_offset 115
 
 #define TOF_ADDRESS 0x29<<1
 

@@ -22,6 +22,8 @@ extern int16_t L_ctrl_signal;
 extern int16_t R_ctrl_signal;
 extern int32_t L_error;
 extern int32_t R_error;
+extern int32_t L_acc_error;
+extern int32_t R_acc_error;
 
 void motorsInit(){
 
@@ -76,11 +78,12 @@ void forward(int16_t power){ // -1000 < power < 1000
 void R_motor_feedback_control(){//speed in mm/s
 	R_prev_enc_count = htim3.Instance->CNT;
 	R_error = (int)(R_speed_setpoint - (WHEEL_DIAMETER_MM*PI*R_prev_enc_count*1000)/(COUNTS_PER_ROTATION*CONTROL_LOOP_PERIOD_MS));
-//	static int32_t prev_control_signal = 0;
+	R_acc_error += R_error;
 
-//	control_signal = R_Kp*error + R_Kd*(control_signal-prev_control_signal);
-	R_ctrl_signal = R_Kp*R_error;
+//					Proportional  		Integral		  FeedForward
+	R_ctrl_signal = R_Kp*R_error + R_Ki*R_acc_error + R_Kff*R_speed_setpoint;
 
+	if (R_ctrl_signal!=0) R_ctrl_signal+= R_ff_offset; //add offset if not standing still
 
 	if (R_ctrl_signal >= 1000) R_ctrl_signal = 999;
 	if (R_ctrl_signal <= -1000) R_ctrl_signal = -999;
@@ -106,11 +109,11 @@ void R_motor_feedback_control(){//speed in mm/s
 void L_motor_feedback_control(){//speed in mm/s
 	L_prev_enc_count = htim5.Instance->CNT;
 	L_error = (int)(L_speed_setpoint - (WHEEL_DIAMETER_MM*PI*L_prev_enc_count*1000)/(COUNTS_PER_ROTATION*CONTROL_LOOP_PERIOD_MS));
-//	static int32_t prev_control_signal = 0;
+	L_acc_error += L_error;
 
-
-//	L_ctrl_signal = L_Kp*L_error + L_Kd*(L_ctrl_signal-prev_control_signal);
-	L_ctrl_signal = L_Kp*L_error;
+	//					Proportional  		Integral		  FeedForward
+	L_ctrl_signal = L_Kp*L_error + L_Ki*L_acc_error + L_Kff*L_speed_setpoint;
+	if (L_ctrl_signal!=0) L_ctrl_signal += L_ff_offset; //add offset if not standing still
 
 	if (L_ctrl_signal>1000) L_ctrl_signal = 999;
 	if (L_ctrl_signal<-1000) L_ctrl_signal = -999;
