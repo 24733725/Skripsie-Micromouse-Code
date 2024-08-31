@@ -1,4 +1,4 @@
-../Core/Src/motor_control.c:26:6:motorsInit	16	static
-../Core/Src/motor_control.c:47:6:forward	0	static
-../Core/Src/motor_control.c:76:6:R_motor_feedback_control	32	static
-../Core/Src/motor_control.c:106:6:L_motor_feedback_control	32	static
+../Core/Src/motor_control.c:31:6:motorsInit	16	static
+../Core/Src/motor_control.c:55:6:forward	0	static
+../Core/Src/motor_control.c:84:6:R_motor_feedback_control	40	static
+../Core/Src/motor_control.c:123:6:L_motor_feedback_control	32	static

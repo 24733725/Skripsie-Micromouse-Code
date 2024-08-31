@@ -27,6 +27,7 @@
 #include "globals.h"
 #include "string.h"
 #include "uart_driver.h"
+#include "TOF_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,12 +65,13 @@ extern uint8_t control_loop_flag;
 extern char send_buffer[64];
 extern int16_t L_prev_enc_count;
 extern int16_t R_prev_enc_count;
-extern int16_t L_ctrl_signal;
-extern int16_t R_ctrl_signal;
+extern int32_t L_ctrl_signal;
+extern int32_t R_ctrl_signal;
 extern int32_t L_error;
 extern int32_t R_error;
 extern int16_t L_speed_setpoint; //mm/s
 extern int16_t R_speed_setpoint;//mm/s
+extern uint8_t measurements[3]; //L:M:R
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -135,6 +137,7 @@ int main(void)
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
 	motorsInit();
+	TOF_init();
 	uart_startup_transmit();
 	HAL_ADC_Start(&hadc1);
 
@@ -179,18 +182,25 @@ int main(void)
 
 		//	  sprintf(buff, "%d",(int)HAL_I2C_GetError(&hi2c1));
 		uart_task();
-		if (HAL_GetTick() - prev_main_loop_time >= 500){
+		if (HAL_GetTick() - prev_main_loop_time >= 100){
 			prev_main_loop_time = HAL_GetTick();
 //			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_prev_enc_count,(int)L_ctrl_signal,(int)R_prev_enc_count, (int)R_ctrl_signal);
-			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)L_prev_enc_count, (int)L_ctrl_signal, (int)L_error);
+			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)L_prev_enc_count, (int)L_ctrl_signal, (int)measurements[1]);
 			HAL_UART_Transmit_IT(&huart2, (uint8_t *)send_buffer, strlen(send_buffer));
 			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+			TOF_get_measurment();
 		}
 		// main control loop:
 		if (HAL_GetTick() - prev_ctr_loop_time >= CONTROL_LOOP_PERIOD_MS){
+
 			prev_ctr_loop_time = HAL_GetTick();
-			R_motor_feedback_control();
-			L_motor_feedback_control();
+			if(measurements[1]>190){
+				R_motor_feedback_control();
+				L_motor_feedback_control();
+			}
+			else{
+				forward(0);
+			}
 
 		}
     /* USER CODE END WHILE */
