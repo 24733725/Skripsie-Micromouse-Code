@@ -12,7 +12,7 @@
 extern I2C_HandleTypeDef hi2c1;
 extern I2C_HandleTypeDef hi2c2;
 extern I2C_HandleTypeDef hi2c3;
-char i2c_buff[128];
+char i2c_buff[8];
 extern uint8_t measurements[3]; //L:M:R
 
 
@@ -21,7 +21,7 @@ void TOF_init(){
 	writeMM(hi2c1);
 	writeMM(hi2c2);
 	writeMM(hi2c3);
-	//begin continuous ranging
+	//begin continuous ranging 0x03, single 0x01
 	i2c_buff[0] = 0x01;
 	HAL_Delay(50);
 	//Left
@@ -123,90 +123,42 @@ void writeMM(I2C_HandleTypeDef a){ //default settings
 	HAL_I2C_Mem_Write(&a, TOF_ADDRESS, 0x0030, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
 	HAL_Delay(1);
 	//custom settings
-//	i2c_buff[0] = 0x10;
-//	HAL_I2C_Mem_Write(&a, TOF_ADDRESS, 0x0011, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000); // Enables polling for ‘New Sample ready’
+	i2c_buff[0] = 0x10;
+	HAL_I2C_Mem_Write(&a, TOF_ADDRESS, 0x0011, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000); // Enables polling for ‘New Sample ready’
 //	// when measurement completes
-//	HAL_Delay(1);
-//	i2c_buff[0] = 0x09;// Set default ranging inter-measurement
+	HAL_Delay(1);
+	i2c_buff[0] = 0x01;// Set default ranging inter-measurement
 //	// period to 100ms
-//	HAL_I2C_Mem_Write(&a, TOF_ADDRESS, 0x001b, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
+	HAL_I2C_Mem_Write(&a, TOF_ADDRESS, 0x001b, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
 //	HAL_Delay(1);
-//	i2c_buff[0] = 0x14;// Set max convergence time to
-//	HAL_I2C_Mem_Write(&a, TOF_ADDRESS, 0x001c, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
+	i2c_buff[0] = 0xA;// Set max convergence time to 10ms
+	HAL_I2C_Mem_Write(&a, TOF_ADDRESS, 0x001c, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
+
+	i2c_buff[0] = 0x24;
+	HAL_I2C_Mem_Write(&a, TOF_ADDRESS, 0x0014, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
+// Configures interrupt on ‘New Sample
+	//// Ready threshold event’
 }
 
 void TOF_task(){
+
+}
+void TOF_start_measurement(){
 	i2c_buff[0] = 0x01;
-	HAL_Delay(50);
-	//Left
-	HAL_I2C_Mem_Write(&hi2c2, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
+	//left
+	HAL_I2C_Mem_Write_IT(&hi2c2, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1);
 	//middle
-	HAL_I2C_Mem_Write(&hi2c1, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
+	HAL_I2C_Mem_Write_IT(&hi2c1, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1);
 	//right
-	HAL_I2C_Mem_Write(&hi2c3, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
-	uint8_t status;
-	uint8_t range_status;
+	HAL_I2C_Mem_Write_IT(&hi2c3, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1);
+}
+void TOF_get_measurement(){ //single shot
 
-	// wait for new measurement ready status
-	HAL_I2C_Mem_Read(&hi2c2, TOF_ADDRESS, 0x04f, I2C_MEMADD_SIZE_16BIT, &status, 1, 10);
-	range_status = status & 0x07;
-//	if (range_status == 0x04){
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		//Left
-		HAL_I2C_Mem_Read_IT(&hi2c2, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, measurements, 1);
-		//middle
-		HAL_I2C_Mem_Read_IT(&hi2c1, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, &measurements[1], 1);
-		//right
-		HAL_I2C_Mem_Read_IT(&hi2c3, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, &measurements[2], 1);
-
-		//clear interrupt
-		i2c_buff[0] = 0x07;
-		HAL_I2C_Mem_Write_IT(&hi2c2, TOF_ADDRESS, 0x015, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1);
-		//middle
-		HAL_I2C_Mem_Write_IT(&hi2c1, TOF_ADDRESS, 0x015, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1);
-		//right
-		HAL_I2C_Mem_Write_IT(&hi2c3, TOF_ADDRESS, 0x015, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1);
-
-//	}
+	//Left
+	HAL_I2C_Mem_Read_IT(&hi2c2, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, measurements, 1);
+	//middle
+	HAL_I2C_Mem_Read_IT(&hi2c1, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, &measurements[1], 1);
+	//right
+	HAL_I2C_Mem_Read_IT(&hi2c3, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, &measurements[2], 1);
 }
 
-void TOF_get_measurment(){ //single shot
-	i2c_buff[0] = 0x01;
-	uint8_t range = 0;
-	//Left
-	HAL_I2C_Mem_Write(&hi2c2, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
-	HAL_I2C_Mem_Read(&hi2c2, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, &range, 1, 1000);
-	measurements[0] = range;
-	//middle
-	HAL_I2C_Mem_Write(&hi2c1, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
-	HAL_I2C_Mem_Read(&hi2c1, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, &range, 1, 1000);
-	measurements[1] = range;
-	//right
-	HAL_I2C_Mem_Write(&hi2c3, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
-	HAL_I2C_Mem_Read(&hi2c3, TOF_ADDRESS, 0x062, I2C_MEMADD_SIZE_16BIT, &range, 1, 1000);
-	measurements[2] = range;
-}
-
-// Recommended : Public registers - See data sheet for more detail
-//WriteByte(0x0011, 0x10); // Enables polling for ‘New Sample ready’
-//// when measurement completes
-//WriteByte(0x010a, 0x30); // Set the averaging sample period
-//// (compromise between lower noise and
-//// increased execution time)
-//WriteByte(0x003f, 0x46); // Sets the light and dark gain (upper
-//// nibble). Dark gain should not be
-//// changed.
-//WriteByte(0x0031, 0xFF); // sets the # of range measurements after
-//// which auto calibration of system is
-//// performed
-//WriteByte(0x0040, 0x63); // Set ALS integration time to 100ms
-//
-//WriteByte(0x002e, 0x01); // perform a single temperature calibration
-//// of the ranging sensor
-//Optional: Public registers - See data sheet for more detail
-//WriteByte(0x001b, 0x09); // Set default ranging inter-measurement
-//// period to 100ms
-//WriteByte(0x003e, 0x31); // Set default ALS inter-measurement period
-//// to 500ms
-//WriteByte(0x0014, 0x24); // Configures interrupt on ‘New Sample
-//// Ready threshold event’

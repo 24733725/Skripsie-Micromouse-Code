@@ -12,7 +12,8 @@
 void TOF_init();
 void TOF_task();
 void writeMM(I2C_HandleTypeDef a);
-void TOF_get_measurment();
+void TOF_get_measurement();
+void TOF_start_measurement();
 
 
 #endif /* INC_TOF_MANAGER_H_ */

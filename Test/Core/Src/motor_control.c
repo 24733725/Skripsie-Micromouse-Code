@@ -81,6 +81,9 @@ void forward(int16_t power){ // -1000 < power < 1000
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -power);
 	}
 }
+void dist(int16_t maxpower, uint16_t dist){
+
+}
 void R_motor_feedback_control(){//speed in mm/s
 	Dist_error_acc += L_acc - R_acc;
 	R_prev_enc_count = htim3.Instance->CNT;
