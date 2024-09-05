@@ -194,13 +194,18 @@ int main(void)
 			TOF_get_measurement();
 			prev_ctr_loop_time = HAL_GetTick();
 			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)measurements[0], (int)measurements[1], (int)measurements[2]);
+//			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)measurements[0], (int)measurements[1], (int)measurements[2]);
+			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_prev_enc_count,(int)L_ctrl_signal,(int)R_prev_enc_count, (int)R_ctrl_signal);
 			HAL_UART_Transmit_IT(&huart2, (uint8_t *)send_buffer, strlen(send_buffer));
 			if(measurements[1]>190){
-//				R_motor_feedback_control();
-//				L_motor_feedback_control();
+				R_motor_feedback_control();
+				L_motor_feedback_control();
+				R_speed_setpoint = 600;
+				L_speed_setpoint = 600;
 			}
 			else{
+				R_speed_setpoint = 0;
+				L_speed_setpoint = 0;
 				forward(0);
 			}
 			TOF_start_measurement();
@@ -249,8 +254,8 @@ void SystemClock_Config(void)
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
 
   if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
   {
@@ -279,7 +284,7 @@ static void MX_ADC1_Init(void)
   /** Configure the global features of the ADC (Clock, Resolution, Data Alignment and number of conversion)
   */
   hadc1.Instance = ADC1;
-  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV4;
+  hadc1.Init.ClockPrescaler = ADC_CLOCK_SYNC_PCLK_DIV2;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;

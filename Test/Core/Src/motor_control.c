@@ -94,11 +94,11 @@ void R_motor_feedback_control(){//speed in mm/s
 	if(R_acc_error > 1000) R_acc_error = 1000;
 	if(R_acc_error < -1000) R_acc_error = -1000;  //limits integral term
 
-	if(Dist_error_acc > 1000) Dist_error_acc = 1000;
-	if(Dist_error_acc < -1000) Dist_error_acc = -1000;  //limits integral term
+	if(Dist_error_acc > 3000) Dist_error_acc = 3000;
+	if(Dist_error_acc < -3000) Dist_error_acc = -3000;  //limits integral term
 
 //					Proportional  		Integral		  FeedForward						proportional distance error   integral distance error
-	R_ctrl_signal = R_Kp*R_error + R_Ki*R_acc_error + R_Kff*R_speed_setpoint + R_ff_offset + K_pdisterror*(L_acc-R_acc) + K_idisterror*Dist_error_acc;
+	R_ctrl_signal = R_Kp*R_error + R_Ki*R_acc_error +/* R_Kff*R_speed_setpoint + R_ff_offset + */K_pdisterror*(L_acc-R_acc) + K_idisterror*Dist_error_acc;
 
 
 
@@ -122,6 +122,7 @@ void R_motor_feedback_control(){//speed in mm/s
 	}
 //	prev_control_signal = R_ctrl_signal;
 	htim3.Instance->CNT = 0;
+
 }
 void L_motor_feedback_control(){//speed in mm/s
 	L_prev_enc_count = htim5.Instance->CNT;
@@ -131,8 +132,8 @@ void L_motor_feedback_control(){//speed in mm/s
 	//limit integral term:
 	if(L_acc_error > 1000) L_acc_error = 1000;
 	if(L_acc_error < -1000) L_acc_error = -1000;
-	//					Proportional  		Integral		  FeedForward					proportional distance error  integral distance error
-	L_ctrl_signal = L_Kp*L_error + L_Ki*L_acc_error + L_Kff*L_speed_setpoint+L_ff_offset + K_pdisterror*(R_acc-L_acc) -  K_idisterror*Dist_error_acc;
+	//				Proportional  		Integral		  FeedForward					proportional distance error  integral distance error
+	L_ctrl_signal = L_Kp*L_error + L_Ki*L_acc_error + /*L_Kff*L_speed_setpoint+L_ff_offset + */K_pdisterror*(R_acc-L_acc) -  K_idisterror*Dist_error_acc;
 
 	if (L_ctrl_signal>1000) L_ctrl_signal = 999;
 	if (L_ctrl_signal<-1000) L_ctrl_signal = -999;
@@ -154,5 +155,6 @@ void L_motor_feedback_control(){//speed in mm/s
 	}
 //	prev_control_signal = L_ctrl_signal;
 	htim5.Instance->CNT = 0;
+
 }
 
