@@ -14,7 +14,7 @@ extern I2C_HandleTypeDef hi2c2;
 extern I2C_HandleTypeDef hi2c3;
 char i2c_buff[8];
 extern uint8_t measurements[3]; //L:M:R
-
+extern TIM_HandleTypeDef htim11;
 
 void TOF_init(){
 	//default settings
@@ -30,6 +30,8 @@ void TOF_init(){
 	HAL_I2C_Mem_Write(&hi2c1, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
 	//right
 	HAL_I2C_Mem_Write(&hi2c3, TOF_ADDRESS, 0x018, I2C_MEMADD_SIZE_16BIT, (uint8_t*)i2c_buff, 1, 1000);
+
+	HAL_TIM_Base_Start_IT(&htim11);
 }
 void writeMM(I2C_HandleTypeDef a){ //default settings
 	i2c_buff[0] = 0x01;

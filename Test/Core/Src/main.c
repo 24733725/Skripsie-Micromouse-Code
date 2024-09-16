@@ -56,6 +56,7 @@ TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 TIM_HandleTypeDef htim5;
+TIM_HandleTypeDef htim11;
 
 UART_HandleTypeDef huart2;
 
@@ -86,6 +87,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM2_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_SPI2_Init(void);
+static void MX_TIM11_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -133,6 +135,7 @@ int main(void)
   MX_TIM2_Init();
   MX_USART2_UART_Init();
   MX_SPI2_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
 	motorsInit();
 	TOF_init();
@@ -189,26 +192,23 @@ int main(void)
 
 		}
 		// main control loop: CONTROL_LOOP_PERIOD_MS
-		if (HAL_GetTick() - prev_ctr_loop_time >= CONTROL_LOOP_PERIOD_MS){
+		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 
-			TOF_get_measurement();
+
 			prev_ctr_loop_time = HAL_GetTick();
-			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 //			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)measurements[0], (int)measurements[1], (int)measurements[2]);
 			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_prev_enc_count,(int)L_ctrl_signal,(int)R_prev_enc_count, (int)R_ctrl_signal);
 			HAL_UART_Transmit_IT(&huart2, (uint8_t *)send_buffer, strlen(send_buffer));
 			if(measurements[1]>190){
 				R_motor_feedback_control();
 				L_motor_feedback_control();
-				R_speed_setpoint = 600;
-				L_speed_setpoint = 600;
+//				R_speed_setpoint = 600;
+//				L_speed_setpoint = 600;
 			}
 			else{
-				R_speed_setpoint = 0;
-				L_speed_setpoint = 0;
-				forward(0);
+				reset_counts();
 			}
-			TOF_start_measurement();
 		}
     /* USER CODE END WHILE */
 
@@ -692,6 +692,37 @@ static void MX_TIM5_Init(void)
   /* USER CODE BEGIN TIM5_Init 2 */
 
   /* USER CODE END TIM5_Init 2 */
+
+}
+
+/**
+  * @brief TIM11 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM11_Init(void)
+{
+
+  /* USER CODE BEGIN TIM11_Init 0 */
+
+  /* USER CODE END TIM11_Init 0 */
+
+  /* USER CODE BEGIN TIM11_Init 1 */
+
+  /* USER CODE END TIM11_Init 1 */
+  htim11.Instance = TIM11;
+  htim11.Init.Prescaler = 24;
+  htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim11.Init.Period = 10000;
+  htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim11) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM11_Init 2 */
+
+  /* USER CODE END TIM11_Init 2 */
 
 }
 
