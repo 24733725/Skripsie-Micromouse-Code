@@ -141,16 +141,20 @@ int main(void)
 	uart_startup_transmit();
 //	HAL_ADC_Start(&hadc1);
 
-
-
-	forward(0);
 	HAL_Delay(3000);
+
+	R_speed_setpoint = 0;
+	L_speed_setpoint = 0;
+
+	move(600,0);
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	HAL_Delay(1000);
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	turn(90);
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint32_t prev_main_loop_time = HAL_GetTick();
 
 
-	R_speed_setpoint = 600;
-	L_speed_setpoint = 600;
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -166,21 +170,7 @@ int main(void)
 		// main control loop: CONTROL_LOOP_PERIOD_MS
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 
-
 			prev_ctr_loop_time = HAL_GetTick();
-//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)measurements[0], (int)measurements[1], (int)measurements[2]);
-//			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_prev_enc_count,(int)L_ctrl_signal,(int)R_prev_enc_count, (int)R_ctrl_signal);
-			HAL_UART_Transmit_IT(&huart2, (uint8_t *)send_buffer, strlen(send_buffer));
-			if(measurements[1]>190){
-				R_motor_feedback_control();
-				L_motor_feedback_control();
-//				R_speed_setpoint = 600;
-//				L_speed_setpoint = 600;
-			}
-			else{
-				reset_counts();
-			}
 		}
     /* USER CODE END WHILE */
 
