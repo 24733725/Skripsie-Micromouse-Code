@@ -61,7 +61,6 @@ TIM_HandleTypeDef htim11;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-extern uint8_t control_loop_flag;
 extern char send_buffer[64];
 extern int16_t L_prev_enc_count;
 extern int16_t R_prev_enc_count;
@@ -142,35 +141,14 @@ int main(void)
 	uart_startup_transmit();
 //	HAL_ADC_Start(&hadc1);
 
-//	uint16_t L_vals[512];
-//	uint16_t R_vals[512];
+
 
 	forward(0);
 	HAL_Delay(3000);
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint32_t prev_main_loop_time = HAL_GetTick();
-	//  HAL_I2C_Mem_Read(&hi2c1, TOF_ADDRESS, 0x0, I2C_MEMADD_SIZE_16BIT, (uint8_t*)buff, 16, 1000);
-//	for (int i = 0; i<512; i++){
-//		if (i==50) forward(400);
-//		HAL_Delay(10);
-//		L_vals[i] = (int)htim5.Instance->CNT;
-//		R_vals[i] = (int)htim3.Instance->CNT;
-//	}
-//	forward(0);
 
 
-//	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(100);
-//	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);}
-//
-//	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
-//	uint32_t Laddress = 0x08020000;
-//	uint32_t Raddress = 0x08030000;
-//	for (int i = 0; i<512; i++){
-//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Laddress+2*i, L_vals[i]);
-//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_vals[i]);
-//		HAL_Delay(1);
-//	}
-//	HAL_FLASH_Lock();
 	R_speed_setpoint = 600;
 	L_speed_setpoint = 600;
   /* USER CODE END 2 */
@@ -179,16 +157,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1)
 	{
-		//	  sprintf(buff, "L:%d R:%d V:%d\n",(int)htim5.Instance->CNT,(int)htim3.Instance->CNT, (int)HAL_ADC_GetValue(&hadc1));
 
-		//	  sprintf(buff, "%d",(int)HAL_I2C_GetError(&hi2c1));
 		uart_task();
 		if (HAL_GetTick() - prev_main_loop_time > 101){
 			prev_main_loop_time = HAL_GetTick();
-//			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_prev_enc_count,(int)L_ctrl_signal,(int)R_prev_enc_count, (int)R_ctrl_signal);
-//			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)measurements[0], (int)measurements[1], (int)measurements[2]);
-//			HAL_UART_Transmit_IT(&huart2, (uint8_t *)send_buffer, strlen(send_buffer));
-//			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 
 		}
 		// main control loop: CONTROL_LOOP_PERIOD_MS
@@ -197,8 +169,8 @@ int main(void)
 
 			prev_ctr_loop_time = HAL_GetTick();
 //			HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)measurements[0], (int)measurements[1], (int)measurements[2]);
-			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_prev_enc_count,(int)L_ctrl_signal,(int)R_prev_enc_count, (int)R_ctrl_signal);
+			sprintf(send_buffer, "R:%d C: %d E:%d\n", (int)measurements[0], (int)measurements[1], (int)measurements[2]);
+//			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_prev_enc_count,(int)L_ctrl_signal,(int)R_prev_enc_count, (int)R_ctrl_signal);
 			HAL_UART_Transmit_IT(&huart2, (uint8_t *)send_buffer, strlen(send_buffer));
 			if(measurements[1]>190){
 				R_motor_feedback_control();
