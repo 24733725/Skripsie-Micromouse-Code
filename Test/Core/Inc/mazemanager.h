@@ -8,6 +8,6 @@
 #ifndef INC_MAZEMANAGER_H_
 #define INC_MAZEMANAGER_H_
 
-
+void explore();
 
 #endif /* INC_MAZEMANAGER_H_ */

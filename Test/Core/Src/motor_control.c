@@ -153,7 +153,7 @@ void turn(int16_t deg){
 			}
 			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_error,(int)L_ctrl_signal,(int)R_error, (int)R_ctrl_signal);
 			uart_transmit(send_buffer, strlen(send_buffer));
-			if (L_error < 2 && L_error > -2 && R_error < 2 && R_error > -2) turn_cmplt =1;
+			if (L_error < 3 && L_error > -3 && R_error < 3 && R_error > -3) turn_cmplt =1;
 		}
 	}
 	reset_counts();

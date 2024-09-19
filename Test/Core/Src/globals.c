@@ -26,9 +26,16 @@ int32_t L_acc = 0;
 int32_t R_acc = 0;
 int32_t Dist_error_acc = 0;
 
-uint8_t heading = 0;
-
 uint8_t measurements[3]; //L:M:R
+
+Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
+
+uint8_t heading = 0;
+uint8_t current_cell_x = 0;
+uint8_t current_cell_y = 0;
+uint8_t end_cell_x = 5;
+uint8_t end_cell_y = 12;
+
 
 
 

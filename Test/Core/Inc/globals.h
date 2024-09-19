@@ -8,6 +8,8 @@
 #ifndef INC_GLOBALS_H_
 #define INC_GLOBALS_H_
 
+#include "inttypes.h"
+
 #define CONTROL_LOOP_PERIOD_MS 20
 #define COUNTS_PER_ROTATION 120
 #define WHEEL_DIAMETER_MM 33
@@ -34,5 +36,13 @@
 
 #define TOF_ADDRESS 0x29<<1
 
+#define MAZE_CELL_WIDTH 6
+#define MAZE_CELL_HEIGHT 13
+typedef struct {
+	uint8_t x;
+	uint8_t y;
+	uint8_t walls;
+	uint8_t dist;
+}Cell;
 
 #endif /* INC_GLOBALS_H_ */

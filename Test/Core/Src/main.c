@@ -27,6 +27,7 @@
 #include "string.h"
 #include "uart_driver.h"
 #include "TOF_manager.h"
+#include "mazemanager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -146,13 +147,11 @@ int main(void)
 	R_speed_setpoint = 0;
 	L_speed_setpoint = 0;
 
-	move(600,0);
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	HAL_Delay(1000);
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-	turn(90);
+	explore();
+
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint32_t prev_main_loop_time = HAL_GetTick();
+
 
 
   /* USER CODE END 2 */
