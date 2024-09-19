@@ -11,6 +11,7 @@
 #include "uart_driver.h"
 #include "stdio.h"
 #include "string.h"
+#include "mazemanager.h"
 
 extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim2;
@@ -30,6 +31,8 @@ extern int32_t R_acc_error;
 extern int32_t L_acc;
 extern int32_t R_acc;
 extern int32_t Dist_error_acc;
+
+extern uint8_t heading;
 
 extern uint8_t measurements[3]; //L:M:R
 extern char send_buffer[64];
@@ -78,13 +81,28 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 	L_speed_setpoint = velocity + (WHEEL_SPACING_MM*omega*PI)/(2*180); //mm/s
 	R_speed_setpoint = velocity - (WHEEL_SPACING_MM*omega*PI)/(2*180);//mm/s
 
+	uint8_t kickL = 0;
+	uint8_t kickR = 0;
+
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 
-	while(measurements[1]>190 && velocity != 0){
+	while(measurements[1]>160 && velocity != 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
-			R_motor_feedback_control();
-			L_motor_feedback_control();
+
+			if (measurements[0]<50) {
+				kickR = -1;
+				kickL = 1;
+			}
+			else if (measurements[2]<50){
+				kickR = 1;
+				kickL = -1;
+			}
+			R_motor_feedback_control(kickR);
+			L_motor_feedback_control(kickL);
+			update();
+			kickL = 0;
+			kickR = 0;
 		}
 	}
 	reset_counts();
@@ -151,14 +169,14 @@ void turn(int16_t deg){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}
-			sprintf(send_buffer, "L:%d > %d R:%d > %d\n",(int)L_error,(int)L_ctrl_signal,(int)R_error, (int)R_ctrl_signal);
-			uart_transmit(send_buffer, strlen(send_buffer));
+
 			if (L_error < 3 && L_error > -3 && R_error < 3 && R_error > -3) turn_cmplt =1;
 		}
 	}
+	heading = (8 + heading + (8+(8*deg)/360)%8)%8;
 	reset_counts();
 }
-void R_motor_feedback_control(){//speed in mm/s
+void R_motor_feedback_control(uint8_t kick){//speed in mm/s
 	Dist_error_acc += L_acc - R_acc;
 	R_prev_enc_count = htim3.Instance->CNT;
 	R_acc += R_prev_enc_count;
@@ -171,7 +189,7 @@ void R_motor_feedback_control(){//speed in mm/s
 	if(R_acc_error < -1000) R_acc_error = -1000;  //limits integral term
 
 //					Proportional  		Integral		  FeedForward 				proportional distance error   integral distance error
-	R_ctrl_signal = R_Kp*R_error + R_Ki*R_acc_error + R_Kff*R_speed_setpoint;// + K_pdisterror*(L_acc-R_acc) + K_idisterror*Dist_error_acc;
+	R_ctrl_signal = R_Kp*R_error + R_Ki*R_acc_error + R_Kff*R_speed_setpoint + K_kick*kick;// + K_pdisterror*(L_acc-R_acc) + K_idisterror*Dist_error_acc;
 	if (R_speed_setpoint > 0) R_ctrl_signal += R_ff_offset;
 	if (R_speed_setpoint < 0) R_ctrl_signal -= R_ff_offset;
 
@@ -196,7 +214,7 @@ void R_motor_feedback_control(){//speed in mm/s
 	htim3.Instance->CNT = 0;
 }
 
-void L_motor_feedback_control(){//speed in mm/s
+void L_motor_feedback_control(uint8_t kick){//speed in mm/s
 	L_prev_enc_count = htim5.Instance->CNT;
 	L_acc += L_prev_enc_count;
 	//error in encoder count for that ctrl period
@@ -207,7 +225,7 @@ void L_motor_feedback_control(){//speed in mm/s
 	if(L_acc_error < -1000) L_acc_error = -1000;  //limits integral term
 
 //					Proportional  		Integral		  FeedForward
-	L_ctrl_signal = L_Kp*L_error + L_Ki*L_acc_error + L_Kff*L_speed_setpoint;//K_pdisterror*(R_acc-L_acc) - K_idisterror*Dist_error_acc;
+	L_ctrl_signal = L_Kp*L_error + L_Ki*L_acc_error + L_Kff*L_speed_setpoint + K_kick*kick;//K_pdisterror*(R_acc-L_acc) - K_idisterror*Dist_error_acc;
 	if (L_speed_setpoint > 0) L_ctrl_signal += L_ff_offset;
 	if (L_speed_setpoint < 0) L_ctrl_signal -= L_ff_offset;
 

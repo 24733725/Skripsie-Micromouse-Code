@@ -34,14 +34,17 @@
 #define K_pdisterror 10
 #define K_idisterror 0
 
+#define K_kick 8
+
 #define TOF_ADDRESS 0x29<<1
 
 #define MAZE_CELL_WIDTH 6
 #define MAZE_CELL_HEIGHT 13
+#define END_CELL_X 5
+#define END_CELL_Y 12
+
 typedef struct {
-	uint8_t x;
-	uint8_t y;
-	uint8_t walls;
+	uint8_t walls;  // binary - 0000 1111 last 1st bit: explored y/n and 4 bits:walls from top clockwise
 	uint8_t dist;
 }Cell;
 

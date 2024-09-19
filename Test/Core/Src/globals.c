@@ -33,8 +33,7 @@ Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
 uint8_t heading = 0;
 uint8_t current_cell_x = 0;
 uint8_t current_cell_y = 0;
-uint8_t end_cell_x = 5;
-uint8_t end_cell_y = 12;
+
 
 
 

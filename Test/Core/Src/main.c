@@ -139,6 +139,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	motorsInit();
 	TOF_init();
+	maze_init();
 	uart_startup_transmit();
 //	HAL_ADC_Start(&hadc1);
 
