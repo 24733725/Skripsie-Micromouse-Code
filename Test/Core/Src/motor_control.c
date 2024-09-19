@@ -81,12 +81,12 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 	L_speed_setpoint = velocity + (WHEEL_SPACING_MM*omega*PI)/(2*180); //mm/s
 	R_speed_setpoint = velocity - (WHEEL_SPACING_MM*omega*PI)/(2*180);//mm/s
 
-	uint8_t kickL = 0;
-	uint8_t kickR = 0;
+	int8_t kickL = 0;
+	int8_t kickR = 0;
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 
-	while(measurements[1]>160 && velocity != 0){
+	while(measurements[1]>100 && velocity != 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
 
@@ -101,6 +101,8 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			R_motor_feedback_control(kickR);
 			L_motor_feedback_control(kickL);
 			update();
+			sprintf(send_buffer, "L:%d R:%d Kl:%d Kr:%d\n",(int)L_ctrl_signal,(int)R_ctrl_signal ,(int)kickL, (int)kickR);
+			uart_transmit(send_buffer, strlen(send_buffer));
 			kickL = 0;
 			kickR = 0;
 		}
@@ -121,12 +123,14 @@ void turn(int16_t deg){
 			L_prev_enc_count = htim5.Instance->CNT;
 //			R_motor_feedback_control();
 			R_error = R_count_target - R_prev_enc_count;
-			R_ctrl_signal = R_Kpt*R_error;
+			R_acc_error += R_error;
+			R_ctrl_signal = R_Kpt*R_error + R_Kit*R_acc_error;
+
 			if (R_error > 0) R_ctrl_signal += R_ff_offset;
 			if (R_error < 0) R_ctrl_signal -= R_ff_offset;
 
-			if (R_ctrl_signal >= 1000) R_ctrl_signal = 999;
-			if (R_ctrl_signal <= -1000) R_ctrl_signal = -999;
+			if (R_ctrl_signal >= 400) R_ctrl_signal = 400;
+			if (R_ctrl_signal <= -400) R_ctrl_signal = -400;
 
 			if (R_ctrl_signal == 0){
 				//motor 1
@@ -147,12 +151,13 @@ void turn(int16_t deg){
 
 //			L_motor_feedback_control();
 			L_error = L_count_target - L_prev_enc_count;
-			L_ctrl_signal = L_Kpt*L_error;
+			L_acc_error += L_error;
+			L_ctrl_signal = L_Kpt*L_error +L_Kit*L_acc_error;
 			if (L_error > 0) L_ctrl_signal += L_ff_offset;
 			if (L_error < 0) L_ctrl_signal -= L_ff_offset;
 
-			if (L_ctrl_signal>=1000) L_ctrl_signal = 999;
-			if (L_ctrl_signal<=-1000) L_ctrl_signal = -999;
+			if (L_ctrl_signal>=400) L_ctrl_signal = 400;
+			if (L_ctrl_signal<=-400) L_ctrl_signal = -400;
 
 			if (L_ctrl_signal == 0){
 				//motor 1
@@ -170,13 +175,13 @@ void turn(int16_t deg){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}
 
-			if (L_error < 3 && L_error > -3 && R_error < 3 && R_error > -3) turn_cmplt =1;
+			if (L_error < 2 && L_error > -2 && R_error < 2 && R_error > -2) turn_cmplt =1;
 		}
 	}
 	heading = (8 + heading + (8+(8*deg)/360)%8)%8;
 	reset_counts();
 }
-void R_motor_feedback_control(uint8_t kick){//speed in mm/s
+void R_motor_feedback_control(int8_t kick){//speed in mm/s
 	Dist_error_acc += L_acc - R_acc;
 	R_prev_enc_count = htim3.Instance->CNT;
 	R_acc += R_prev_enc_count;
@@ -214,7 +219,7 @@ void R_motor_feedback_control(uint8_t kick){//speed in mm/s
 	htim3.Instance->CNT = 0;
 }
 
-void L_motor_feedback_control(uint8_t kick){//speed in mm/s
+void L_motor_feedback_control(int8_t kick){//speed in mm/s
 	L_prev_enc_count = htim5.Instance->CNT;
 	L_acc += L_prev_enc_count;
 	//error in encoder count for that ctrl period

@@ -46,18 +46,16 @@ void maze_init(){
 }
 
 void explore(){
-	move(600,0);
+	move(400,0);
 	while(1){
-		HAL_Delay(10);
-		if (measurements[0]>100) turn(-90);
-		else if (measurements[2]>100) turn(90);
+		HAL_Delay(300);
+		if (measurements[0]>80) turn(-90);
+		else if (measurements[2]>80) turn(90);
 		else turn(180);
 
-		HAL_Delay(10);
-		move(600,0);
+		HAL_Delay(300);
+		move(400,0);
 	}
-	HAL_Delay(10);
-	turn(90);
 }
 void update(){
 	if ((L_acc%208) > 98 && (L_acc%208) < 110){
@@ -121,6 +119,7 @@ void update(){
 				break;
 		}
 	}
-	sprintf(send_buffer, "x:%d Y:%d LC:%d H:%d\n",(int)current_cell_x,(int)current_cell_y ,(int)L_acc, (int)heading);
-	uart_transmit(send_buffer, strlen(send_buffer));
+//	sprintf(send_buffer, "x:%d Y:%d LC:%d H:%d\n",(int)current_cell_x,(int)current_cell_y ,(int)L_acc, (int)heading);
+//	sprintf(send_buffer, "x:%d Y:%d LC:%d H:%d\n",(int)current_cell_x,(int)current_cell_y ,(int)L_acc, (int)heading);
+//	uart_transmit(send_buffer, strlen(send_buffer));
 }

@@ -16,25 +16,30 @@
 #define WHEEL_SPACING_MM 81
 #define PI 3.14159
 
-#define L_Kpt 5
+//straight line
 #define L_Kp 25
 #define L_Kd 0.01
 #define L_Ki 1
 #define L_Kff 0.475
 #define L_ff_offset 120
 
-#define R_Kpt 5
 #define R_Kp 25
 #define R_Kd 0.01
 #define R_Ki 1
 #define R_Kff 0.5
 #define R_ff_offset 120
 
-#define K_pspeederror 10
-#define K_pdisterror 10
-#define K_idisterror 0
+//turning
+#define L_Kpt 7
+#define R_Kpt 7
+#define L_Kit 0.2
+#define R_Kit 0.2
 
-#define K_kick 8
+//#define K_pspeederror 10
+//#define K_pdisterror 10
+//#define K_idisterror 0
+
+#define K_kick 25
 
 #define TOF_ADDRESS 0x29<<1
 
