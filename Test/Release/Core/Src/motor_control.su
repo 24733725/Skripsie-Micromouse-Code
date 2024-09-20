@@ -1,6 +1,6 @@
 ../Core/Src/motor_control.c:39:6:motorsInit	16	static
 ../Core/Src/motor_control.c:57:6:reset_counts	0	static
 ../Core/Src/motor_control.c:112:6:turn	48	static
-../Core/Src/motor_control.c:184:6:R_motor_feedback_control	24	static
-../Core/Src/motor_control.c:222:6:L_motor_feedback_control	24	static
+../Core/Src/motor_control.c:187:6:R_motor_feedback_control	24	static
+../Core/Src/motor_control.c:225:6:L_motor_feedback_control	24	static
 ../Core/Src/motor_control.c:80:6:move	40	static

@@ -52,5 +52,16 @@ typedef struct {
 	uint8_t walls;  // binary - 0000 1111 last 1st bit: explored y/n and 4 bits:walls from top clockwise
 	uint8_t dist;
 }Cell;
-
+typedef enum {
+	NORTH = 0,
+	EAST = 1,
+	SOUTH = 2,
+	WEST = 3,
+} Direction;
+typedef enum {
+	LEFT = 0,
+	STRAIGHT = 1,
+	RIGHT = 2,
+	BACK = 3,
+} Relative_Direction;
 #endif /* INC_GLOBALS_H_ */

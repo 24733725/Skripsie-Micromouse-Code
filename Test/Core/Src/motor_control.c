@@ -180,6 +180,9 @@ void turn(int16_t deg){
 	}
 	heading = (8 + heading + (8+(8*deg)/360)%8)%8;
 	reset_counts();
+	//need to take into account that after turn, mouse is in middle of cell
+	R_acc += 104;
+	L_acc += 104;
 }
 void R_motor_feedback_control(int8_t kick){//speed in mm/s
 	Dist_error_acc += L_acc - R_acc;
