@@ -11,6 +11,7 @@
 #include "uart_driver.h"
 #include "stdio.h"
 #include "string.h"
+#include "stdlib.h"
 #include "mazemanager.h"
 
 extern TIM_HandleTypeDef htim1;
@@ -101,8 +102,8 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			R_motor_feedback_control(kickR);
 			L_motor_feedback_control(kickL);
 			update();
-			sprintf(send_buffer, "L:%d R:%d Kl:%d Kr:%d\n",(int)L_ctrl_signal,(int)R_ctrl_signal ,(int)kickL, (int)kickR);
-			uart_transmit(send_buffer, strlen(send_buffer));
+//			sprintf(send_buffer, "L:%d R:%d Kl:%d Kr:%d\n",(int)L_ctrl_signal,(int)R_ctrl_signal ,(int)kickL, (int)kickR);
+//			uart_transmit(send_buffer, strlen(send_buffer));
 			kickL = 0;
 			kickR = 0;
 		}
@@ -175,7 +176,7 @@ void turn(int16_t deg){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}
 
-			if (L_error < 2 && L_error > -2 && R_error < 2 && R_error > -2) turn_cmplt =1;
+			if (L_error < Enc_Turn_Error && L_error > -Enc_Turn_Error && R_error < Enc_Turn_Error && R_error > -Enc_Turn_Error) turn_cmplt =1;
 		}
 	}
 	heading = (8 + heading + (8+(8*deg)/360)%8)%8;
@@ -192,7 +193,7 @@ void R_motor_feedback_control(int8_t kick){//speed in mm/s
 	//error in encoder count for that ctrl period
 	R_error = (int)((R_speed_setpoint*COUNTS_PER_ROTATION*CONTROL_LOOP_PERIOD_MS)/(WHEEL_DIAMETER_MM*PI*1000)) - R_prev_enc_count;
 
-	R_acc_error += R_error;
+	R_acc_error += R_error *(1-abs(kick));
 	if(R_acc_error > 1000) R_acc_error = 1000;
 	if(R_acc_error < -1000) R_acc_error = -1000;  //limits integral term
 
@@ -228,7 +229,7 @@ void L_motor_feedback_control(int8_t kick){//speed in mm/s
 	//error in encoder count for that ctrl period
 	L_error = (int)((L_speed_setpoint*COUNTS_PER_ROTATION*CONTROL_LOOP_PERIOD_MS)/(WHEEL_DIAMETER_MM*PI*1000)) - L_prev_enc_count;
 
-	L_acc_error += L_error;
+	L_acc_error += L_error * (1-abs(kick));
 	if(L_acc_error > 1000) L_acc_error = 1000;
 	if(L_acc_error < -1000) L_acc_error = -1000;  //limits integral term
 
