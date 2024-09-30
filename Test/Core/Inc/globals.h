@@ -17,24 +17,24 @@
 #define PI 3.14159
 
 //straight line
-#define L_Kp 25
+#define L_Kp 50
 #define L_Kd 0.01
 #define L_Ki 1
 #define L_Kff 0.475
-#define L_ff_offset 120
+#define L_ff_offset 125
 
-#define R_Kp 25
+#define R_Kp 50
 #define R_Kd 0.01
 #define R_Ki 1
 #define R_Kff 0.5
-#define R_ff_offset 120
+#define R_ff_offset 125
 
 //turning
 #define L_Kpt 7
 #define R_Kpt 7
-#define L_Kit 0.2
-#define R_Kit 0.2
-#define Enc_Turn_Error 2
+#define L_Kid 0.2
+#define R_Kid 0.2
+#define Enc_Turn_Error 1
 
 //#define K_pspeederror 10
 //#define K_pdisterror 10
@@ -45,9 +45,9 @@
 #define TOF_ADDRESS 0x29<<1
 
 #define MAZE_CELL_WIDTH 6
-#define MAZE_CELL_HEIGHT 13
-#define END_CELL_X 5
-#define END_CELL_Y 12
+#define MAZE_CELL_HEIGHT 6
+#define END_CELL_X 3
+#define END_CELL_Y 3
 
 typedef struct {
 	uint8_t walls;  // binary - 0000 1111 last 1st bit: explored y/n and 4 bits:walls from top clockwise
@@ -60,9 +60,14 @@ typedef enum {
 	WEST = 3,
 } Direction;
 typedef enum {
-	LEFT = 0,
-	STRAIGHT = 1,
-	RIGHT = 2,
-	BACK = 3,
+	LEFT = 3,
+	STRAIGHT = 0,
+	RIGHT = 1,
+	BACK = 2,
 } Relative_Direction;
+typedef struct {
+    uint8_t heading;
+    uint8_t current_cell_x;
+    uint8_t current_cell_y;
+} MouseStruct;
 #endif /* INC_GLOBALS_H_ */

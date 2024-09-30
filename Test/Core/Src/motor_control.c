@@ -33,8 +33,7 @@ extern int32_t L_acc;
 extern int32_t R_acc;
 extern int32_t Dist_error_acc;
 
-extern uint8_t heading;
-
+extern MouseStruct Mouse;
 extern uint8_t measurements[3]; //L:M:R
 extern char send_buffer[64];
 void motorsInit(){
@@ -87,15 +86,15 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 
-	while(measurements[1]>100 && velocity != 0){
+	while(measurements[1]>135 && velocity != 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
 
-			if (measurements[0]<50) {
+			if (measurements[0]<60) {
 				kickR = -1;
 				kickL = 1;
 			}
-			else if (measurements[2]<50){
+			else if (measurements[2]<60){
 				kickR = 1;
 				kickL = -1;
 			}
@@ -112,8 +111,10 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 }
 void turn(int16_t deg){
 	reset_counts();
-	int16_t L_count_target = (WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360);
-	int16_t R_count_target = -(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360);
+	int16_t L_count_target = (int)(1.01*(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360));
+	int16_t R_count_target = (int)(-1.01*(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360));
+	int16_t L_prev_error = L_count_target;
+	int16_t R_prev_error = R_count_target;
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint8_t turn_cmplt = 0;
@@ -124,14 +125,13 @@ void turn(int16_t deg){
 			L_prev_enc_count = htim5.Instance->CNT;
 //			R_motor_feedback_control();
 			R_error = R_count_target - R_prev_enc_count;
-			R_acc_error += R_error;
-			R_ctrl_signal = R_Kpt*R_error + R_Kit*R_acc_error;
+			R_ctrl_signal = R_Kpt*R_error + R_Kid*(R_error-R_prev_error)*50;
 
 			if (R_error > 0) R_ctrl_signal += R_ff_offset;
 			if (R_error < 0) R_ctrl_signal -= R_ff_offset;
 
-			if (R_ctrl_signal >= 400) R_ctrl_signal = 400;
-			if (R_ctrl_signal <= -400) R_ctrl_signal = -400;
+			if (R_ctrl_signal >= 500) R_ctrl_signal = 500;
+			if (R_ctrl_signal <= -500) R_ctrl_signal = -500;
 
 			if (R_ctrl_signal == 0){
 				//motor 1
@@ -152,13 +152,12 @@ void turn(int16_t deg){
 
 //			L_motor_feedback_control();
 			L_error = L_count_target - L_prev_enc_count;
-			L_acc_error += L_error;
-			L_ctrl_signal = L_Kpt*L_error +L_Kit*L_acc_error;
+			L_ctrl_signal = L_Kpt*L_error + L_Kid*(L_error-L_prev_error)*50;
 			if (L_error > 0) L_ctrl_signal += L_ff_offset;
 			if (L_error < 0) L_ctrl_signal -= L_ff_offset;
 
-			if (L_ctrl_signal>=400) L_ctrl_signal = 400;
-			if (L_ctrl_signal<=-400) L_ctrl_signal = -400;
+			if (L_ctrl_signal>=500) L_ctrl_signal = 500;
+			if (L_ctrl_signal<=-500) L_ctrl_signal = -500;
 
 			if (L_ctrl_signal == 0){
 				//motor 1
@@ -175,11 +174,15 @@ void turn(int16_t deg){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}
+			if (abs(L_error) <= Enc_Turn_Error && abs(L_prev_error) <= Enc_Turn_Error && abs(R_error) <= Enc_Turn_Error && abs(R_prev_error) <= Enc_Turn_Error) turn_cmplt=1;
+			L_prev_error = L_error;
+			R_prev_error = R_error;
 
-			if (L_error < Enc_Turn_Error && L_error > -Enc_Turn_Error && R_error < Enc_Turn_Error && R_error > -Enc_Turn_Error) turn_cmplt =1;
+//			sprintf(send_buffer, "L:%d R:%d Kl:%d Kr:%d\n",(int)L_ctrl_signal,(int)L_prev_enc_count, (int)R_ctrl_signal , (int)R_prev_enc_count);
+//			uart_transmit(send_buffer, strlen(send_buffer));
 		}
 	}
-	heading = (8 + heading + (8+(8*deg)/360)%8)%8;
+	Mouse.heading = (8 + Mouse.heading + (8+(8*deg)/360)%8)%8;
 	reset_counts();
 	//need to take into account that after turn, mouse is in middle of cell
 	R_acc += 104;

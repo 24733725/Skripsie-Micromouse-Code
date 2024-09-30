@@ -19,9 +19,8 @@ extern Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
 
 extern int32_t L_acc;
 extern int32_t R_acc;
-extern uint8_t heading;
-extern uint8_t current_cell_x;
-extern uint8_t current_cell_y;
+
+extern MouseStruct Mouse;
 
 //extern TIM_HandleTypeDef htim5;
 
@@ -30,7 +29,7 @@ void maze_init(){
 	for (int i = 0; i < MAZE_CELL_WIDTH; i++){
 		for (int j = 0; j < MAZE_CELL_HEIGHT; j++){
 			maze[i][j].dist = abs(END_CELL_X-i) + abs(END_CELL_Y-j);
-			maze[i][j].walls = 15;
+			maze[i][j].walls = 0x0F;
 		}
 	}
 	//should actually assume all walls filled in
@@ -45,7 +44,6 @@ void maze_init(){
 	//		add_wall(MAZE_CELL_WIDTH-1, j, EAST);
 	//	}
 	// explored starting square
-	maze[0][0].walls = 0;
 	rem_wall(0, 0, EAST);
 	set_explored(0, 0);
 
@@ -59,79 +57,80 @@ void maze_init(){
 void explore(){
 	move(400,0);
 	while(1){
-		HAL_Delay(25);
-		if (read_wall(current_cell_x, current_cell_y, rel_to_fixed_dir(LEFT))==0) turn(-90);
-		else if (read_wall(current_cell_x, current_cell_y, rel_to_fixed_dir(RIGHT))==0) turn(90);
-		else turn(180);
+		HAL_Delay(200);
+		turn(90);
+//		if (read_wall(current_cell_x, current_cell_y, rel_to_fixed_dir(LEFT))==0) turn(-90);
+//		else if (read_wall(current_cell_x, current_cell_y, rel_to_fixed_dir(RIGHT))==0) turn(90);
+//		else turn(180);
 		//		save_maze();
 		HAL_Delay(300);
 		move(400,0);
-		if(current_cell_x >= MAZE_CELL_WIDTH || current_cell_y >= MAZE_CELL_HEIGHT) break;
+//		if(Mouse.current_cell_x >= MAZE_CELL_WIDTH || Mouse.current_cell_y >= MAZE_CELL_HEIGHT) break;
 		//		sprintf(send_buffer, "L:%.3d M:%.3d R:%.3d E:%d\n",(int)measurements[0],(int)measurements[1] ,(int)measurements[2], (int)htim5.Instance->CNT);
 		//		uart_transmit(send_buffer, strlen(send_buffer));
 	}
 }
 void update(){
-	static uint8_t prev_measurements[3] = {0, 0, 0};
-	if(prev_measurements[0] - measurements[0] > 55){ //big jump in left, therefore opening
-		switch (heading) {//update block in front
+	static uint8_t prev_measurements[3] = {255, 255, 255};
+	if(measurements[0] - prev_measurements[0] > 55){ //big jump in left, therefore opening
+		switch (Mouse.heading) {//update block in front
 		case 0:
-			rem_wall(current_cell_x+1, current_cell_y, NORTH);
+			rem_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, NORTH);
 			break;
 		case 2:
-			rem_wall(current_cell_x+1, current_cell_y+1, EAST);
+			rem_wall(Mouse.current_cell_x+1, Mouse.current_cell_y+1, EAST);
 			break;
 		case 4:
-			rem_wall(current_cell_x-1, current_cell_y, SOUTH);
+			rem_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, SOUTH);
 			break;
 		case 6:
-			rem_wall(current_cell_x, current_cell_y-1, WEST);
+			rem_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, WEST);
 			break;
 		default:
 			break;
 		}
 	}
 	if(measurements[0] > 180){ //check middle
-		switch (heading) {//update block in front
+		switch (Mouse.heading) {//update block in front
 		case 0:
-			rem_wall(current_cell_x+1, current_cell_y, EAST);
+			rem_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, EAST);
 			break;
 		case 2:
-			rem_wall(current_cell_x+1, current_cell_y+1, SOUTH);
+			rem_wall(Mouse.current_cell_x+1, Mouse.current_cell_y+1, SOUTH);
 			break;
 		case 4:
-			rem_wall(current_cell_x-1, current_cell_y, WEST);
+			rem_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, WEST);
 			break;
 		case 6:
-			rem_wall(current_cell_x, current_cell_y-1, NORTH);
+			rem_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, NORTH);
 			break;
 		default:
 			break;
 		}
 	}
-	if(prev_measurements[2] - measurements[2] > 55){ //big jump in right, therefore opening
-		switch (heading) {//update block in front
+	if(measurements[2] - prev_measurements[2] > 55){ //big jump in right, therefore opening
+		switch (Mouse.heading) {//update block in front
 		case 0:
-			rem_wall(current_cell_x+1, current_cell_y, SOUTH);
+			rem_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, SOUTH);
 			break;
 		case 2:
-			rem_wall(current_cell_x+1, current_cell_y+1, WEST);
+			rem_wall(Mouse.current_cell_x+1, Mouse.current_cell_y+1, WEST);
 			break;
 		case 4:
-			rem_wall(current_cell_x-1, current_cell_y, NORTH);
+			rem_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, NORTH);
 			break;
 		case 6:
-			rem_wall(current_cell_x, current_cell_y-1, EAST);
+			rem_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, EAST);
 			break;
 		default:
 			break;
 		}
 	}
 	//update current cell coords
-	switch (heading) {
+	switch (Mouse.heading) {
 	case 0:
 		if (L_acc >= 208 && L_acc >= 208){
-			current_cell_x ++; //208 = (120*180)/33pi
+			Mouse.current_cell_y ++; //208 = (120*180)/33pi
 
 			L_acc -= 208;
 			R_acc -= 208;
@@ -139,8 +138,8 @@ void update(){
 		break;
 	case 1:
 		if (L_acc >= 295 && L_acc >= 295){
-			current_cell_x ++; //sqrt(2) * 208
-			current_cell_y ++;
+			Mouse.current_cell_x ++; //sqrt(2) * 208
+			Mouse.current_cell_y ++;
 
 			L_acc -= 295;
 			R_acc -= 295;
@@ -148,7 +147,7 @@ void update(){
 		break;
 	case 2:
 		if (L_acc >= 208 && L_acc >= 208){
-			current_cell_y ++;
+			Mouse.current_cell_x ++;
 
 			L_acc -= 208;
 			R_acc -= 208;
@@ -156,8 +155,8 @@ void update(){
 		break;
 	case 3:
 		if (L_acc >= 295 && L_acc >= 295){
-			current_cell_x --;
-			current_cell_y ++;
+			Mouse.current_cell_x ++;
+			Mouse.current_cell_y --;
 
 			L_acc -= 295;
 			R_acc -= 295;
@@ -165,7 +164,7 @@ void update(){
 		break;
 	case 4:
 		if (L_acc >= 208 && L_acc >= 208){
-			current_cell_x --;
+			Mouse.current_cell_y --;
 
 			L_acc -= 208;
 			R_acc -= 208;
@@ -173,8 +172,8 @@ void update(){
 		break;
 	case 5:
 		if (L_acc >= 295 && L_acc >= 295){
-			current_cell_x --;
-			current_cell_y --;
+			Mouse.current_cell_x --;
+			Mouse.current_cell_y --;
 
 			L_acc -= 295;
 			R_acc -= 295;
@@ -182,7 +181,7 @@ void update(){
 		break;
 	case 6:
 		if (L_acc >= 208 && L_acc >= 208){
-			current_cell_y --;
+			Mouse.current_cell_x --;
 
 			L_acc -= 208;
 			R_acc -= 208;
@@ -190,8 +189,8 @@ void update(){
 		break;
 	case 7:
 		if (L_acc >= 295 && L_acc >= 295){
-			current_cell_x ++;
-			current_cell_y --;
+			Mouse.current_cell_x --;
+			Mouse.current_cell_y ++;
 
 			L_acc -= 295;
 			R_acc -= 295;
@@ -200,7 +199,7 @@ void update(){
 	default:
 		break;
 	}
-	set_explored(current_cell_x, current_cell_y);
+	set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
 	prev_measurements[0] = measurements[0];
 	prev_measurements[1] = measurements[1];
 	prev_measurements[2] = measurements[2];
@@ -223,36 +222,21 @@ void save_maze(){
 	//	HAL_FLASH_Lock();
 }
 Direction rel_to_fixed_dir(Relative_Direction mouse_dir){
-	return ((heading/2)+ mouse_dir)%4;
+	return ((Mouse.heading/2)+ mouse_dir)%4;
 }
-void rem_wall(uint8_t x, uint8_t y, Direction dir){
-	if ((maze[x][y].walls & 0xF0) == 0){
-		maze[x][y].walls  &=  ~(0b01<<dir);
-		switch (dir) {
-		case NORTH:
-			if (y > 0){
-				maze[x][y-1].walls  &=  ~(0b01<<SOUTH);
-			}
-			break;
-		case EAST:
-			if (x + 2 < MAZE_CELL_WIDTH){
-				maze[x+1][y].walls  &=  ~(0b01<<WEST);
-			}
-			break;
-		case SOUTH:
-			if (y + 2 < MAZE_CELL_HEIGHT){
-				maze[x][y+1].walls  &=  ~(0b01<<NORTH);
-			}
-			break;
-		case WEST:
-			if (x > 0){
-				maze[x-1][y].walls  &=  ~(0b01<<EAST);
-			}
-			break;
-		default:
-			break;
-		}
-	}
+void rem_wall(uint8_t x, uint8_t y, uint8_t dir) {
+    if ((maze[x][y].walls & 0xF0) == 0) {
+        maze[x][y].walls &= ~(1 << dir);
+        if (dir == NORTH && y + 1 < MAZE_CELL_HEIGHT) {
+            maze[x][y + 1].walls &= ~(1 << SOUTH);
+        } else if (dir == EAST && x + 1 < MAZE_CELL_WIDTH) {
+            maze[x + 1][y].walls &= ~(1 << WEST);
+        } else if (dir == SOUTH && y > 0) {
+            maze[x][y - 1].walls &= ~(1 << NORTH);
+        } else if (dir == WEST && x > 0) {
+            maze[x - 1][y].walls &= ~(1 << EAST);
+        }
+    }
 }
 uint8_t read_wall(uint8_t x, uint8_t y, Direction dir){
 	if ((maze[x][y].walls & (0x01<<dir))==0){
@@ -260,12 +244,14 @@ uint8_t read_wall(uint8_t x, uint8_t y, Direction dir){
 	}
 	else return 1;
 }
-void set_explored(uint8_t x, uint8_t y){
-	maze[x][y].walls  |=  0xF0;
+void set_explored(uint8_t x, uint8_t y) {
+    if (x >= 0 && x < MAZE_CELL_WIDTH && y >= 0 && y < MAZE_CELL_HEIGHT) {
+        maze[x][y].walls |= 0xF0;
+    }
 }
-uint8_t get_explored(uint8_t x, uint8_t y){
-	if ((maze[x][y].walls & 0xF0) == 0){
-		return 0;
-	}
-	else return 1;
+uint8_t get_explored(uint8_t x, uint8_t y) {
+    if (x >= 0 && x < MAZE_CELL_WIDTH && y >= 0 && y < MAZE_CELL_HEIGHT) {
+        return (maze[x][y].walls & 0xF0) != 0;
+    }
+    return 1;
 }
