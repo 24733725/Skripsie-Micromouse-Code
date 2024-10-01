@@ -140,6 +140,7 @@ int main(void)
 	motorsInit();
 	TOF_init();
 	maze_init();
+	HAL_Delay(200);
 	uart_startup_transmit();
 //	HAL_ADC_Start(&hadc1);
 
@@ -148,7 +149,7 @@ int main(void)
 	R_speed_setpoint = 0;
 	L_speed_setpoint = 0;
 
-	explore();
+	explore(END_CELL_X, END_CELL_Y);
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint32_t prev_main_loop_time = HAL_GetTick();

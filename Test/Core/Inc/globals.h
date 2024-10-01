@@ -44,10 +44,10 @@
 
 #define TOF_ADDRESS 0x29<<1
 
-#define MAZE_CELL_WIDTH 6
+#define MAZE_CELL_WIDTH 13
 #define MAZE_CELL_HEIGHT 6
-#define END_CELL_X 3
-#define END_CELL_Y 3
+#define END_CELL_X 6
+#define END_CELL_Y 2
 
 typedef struct {
 	uint8_t walls;  // binary - 0000 1111 last 1st bit: explored y/n and 4 bits:walls from top clockwise
@@ -60,10 +60,10 @@ typedef enum {
 	WEST = 3,
 } Direction;
 typedef enum {
-	LEFT = 3,
 	STRAIGHT = 0,
 	RIGHT = 1,
 	BACK = 2,
+	LEFT = 3,
 } Relative_Direction;
 typedef struct {
     uint8_t heading;
