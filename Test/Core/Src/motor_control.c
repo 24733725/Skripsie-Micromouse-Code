@@ -86,7 +86,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 
-	while(measurements[1]>135 && velocity != 0 && (dir_of_lowest(Mouse.current_cell_x, Mouse.current_cell_y)==rel_to_fixed_dir(STRAIGHT))){
+	while(measurements[1]>60 && velocity != 0 && (dir_of_lowest(Mouse.current_cell_x, Mouse.current_cell_y)==rel_to_fixed_dir(STRAIGHT))){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
 
@@ -101,15 +101,25 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			R_motor_feedback_control(kickR);
 			L_motor_feedback_control(kickL);
 			update();
-			sprintf(send_buffer, "L:%d R:%d\n",(int)L_acc,(int)R_acc );
-			uart_transmit(send_buffer, strlen(send_buffer));
+//			sprintf(send_buffer, "L:%d R:%d x:%d y:%d\n",(int)L_acc,(int)R_acc, (int)Mouse.current_cell_x, (int)Mouse.current_cell_y );
+//			uart_transmit(send_buffer, strlen(send_buffer));
 			kickL = 0;
 			kickR = 0;
 		}
 	}
+	uint8_t cnt = 2;
+	while(cnt > 0){
+		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
+			prev_ctr_loop_time = HAL_GetTick();
+			R_motor_feedback_control(0);
+			L_motor_feedback_control(0);
+			update();
+			cnt --;
+		}
+	}
 	L_speed_setpoint = 0; //mm/s
 	R_speed_setpoint = 0;//mm/s
-	while((L_prev_enc_count > 2)&&(R_prev_enc_count>2)){
+	while((L_prev_enc_count > 1)&&(R_prev_enc_count>1)){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
 			R_motor_feedback_control(0);
@@ -188,15 +198,22 @@ void turn(int16_t deg){
 			L_prev_error = L_error;
 			R_prev_error = R_error;
 
-			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
-			uart_transmit(send_buffer, strlen(send_buffer));
+//			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
+//			uart_transmit(send_buffer, strlen(send_buffer));
 		}
 	}
 	Mouse.heading = (8 + Mouse.heading + (8+(8*deg)/360)%8)%8;
 	reset_counts();
+	set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
 	//need to take into account that after turn, mouse is in middle of cell
-	R_acc += 35;
-	L_acc += 35;
+	if (abs(deg) == 90){
+		R_acc += 50;
+		L_acc += 50;
+	}
+	if (abs(deg) == 180){
+		R_acc += 75;
+		L_acc += 75;
+	}
 }
 void R_motor_feedback_control(int8_t kick){//speed in mm/s
 	Dist_error_acc += L_acc - R_acc;

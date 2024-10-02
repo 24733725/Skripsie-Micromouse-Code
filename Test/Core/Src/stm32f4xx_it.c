@@ -218,7 +218,7 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
 	else{
 		TOF_start_measurement();
 		flag = 0;
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 	}
 
   /* USER CODE END TIM1_TRG_COM_TIM11_IRQn 0 */

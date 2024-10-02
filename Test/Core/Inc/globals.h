@@ -34,20 +34,22 @@
 #define R_Kpt 7
 #define L_Kid 0.2
 #define R_Kid 0.2
-#define Enc_Turn_Error 1
+#define Enc_Turn_Error 0
 
 //#define K_pspeederror 10
 //#define K_pdisterror 10
 //#define K_idisterror 0
 
-#define K_kick 25
+#define K_kick 30
 
 #define TOF_ADDRESS 0x29<<1
 
-#define MAZE_CELL_WIDTH 13
-#define MAZE_CELL_HEIGHT 6
-#define END_CELL_X 6
-#define END_CELL_Y 2
+#define MAZE_CELL_WIDTH 4
+#define MAZE_CELL_HEIGHT 4
+#define END_CELL_X 3
+#define END_CELL_Y 0
+
+#define COUNTS_PER_CELL 208
 
 typedef struct {
 	uint8_t walls;  // binary - 0000 1111 last 1st bit: explored y/n and 4 bits:walls from top clockwise
