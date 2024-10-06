@@ -34,7 +34,7 @@
 #define R_Kpt 7
 #define L_Kid 0.2
 #define R_Kid 0.2
-#define Enc_Turn_Error 0
+#define Enc_Turn_Error 1
 
 //#define K_pspeederror 10
 //#define K_pdisterror 10

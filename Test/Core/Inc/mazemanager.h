@@ -12,7 +12,7 @@
 #include "inttypes.h"
 
 void maze_init();
-void explore(uint8_t x, uint8_t y);
+void explore();
 void update();
 void save_maze();
 void print_maze();

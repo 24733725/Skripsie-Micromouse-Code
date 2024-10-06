@@ -20,6 +20,8 @@ extern Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
 extern int32_t L_acc;
 extern int32_t R_acc;
 
+extern uint8_t target_x;
+extern uint8_t target_y;
 extern MouseStruct Mouse;
 
 //extern TIM_HandleTypeDef htim5;
@@ -48,15 +50,37 @@ void maze_init(){
     add_wall(0, 0, SOUTH);
     add_wall(0, 0, WEST);
 	set_explored(0, 0);
-
 //	print_maze();
 
 //    add_wall(0, 2, EAST);
 //    add_wall(0, 2, NORTH);
+//    add_wall(1, 3, EAST);
+//    add_wall(1, 3, SOUTH);
+//    add_wall(2, 3, WEST);
+//    add_wall(3, 3, WEST);
+//    add_wall(1, 0, NORTH);
+//    add_wall(3, 1, WEST);
+//    add_wall(2, 1, WEST);
 //    set_explored(0, 1);
-//    flood(END_CELL_X, END_CELL_Y);
+//    set_explored(1, 1);
+//    set_explored(2, 1);
+//    set_explored(3, 2);
 //
 //    print_maze();
+//    int t1 = HAL_GetTick();
+    flood(END_CELL_X, END_CELL_Y);
+//    int t2 = HAL_GetTick();
+//
+//	sprintf(send_buffer, "%d\n",t1);
+//	uart_transmit(send_buffer, strlen(send_buffer));
+//	HAL_Delay(15);
+//	sprintf(send_buffer, "%d\n",t2);
+//	uart_transmit(send_buffer, strlen(send_buffer));
+//	HAL_Delay(15);
+//
+	print_maze();
+//	save_maze();
+//
 }
 void print_maze(){
 	HAL_Delay(15);
@@ -91,75 +115,94 @@ void turn_to_direction(uint8_t target_dir){
 	uint8_t diff = (4 + target_dir - (Mouse.heading / 2)) % 4;
     if (diff == 1){
     	turn(90);
+//		R_acc += 50;
+//		L_acc += 50;
     }
     else if (diff == 2){
     	turn(180);
+//		R_acc += 75;
+//		L_acc += 75;
     }
     else if (diff == 3){
     	turn(-90);
+//		R_acc += 50;
+//		L_acc += 50;
     }
+//    else{
+//		R_acc += 60;
+//		L_acc += 60;
+//    }
 }
-void explore(uint8_t x, uint8_t y){
-	while(!((Mouse.current_cell_x == x) && (Mouse.current_cell_y == y))){
-		flood(x, y);
+void explore(){
+
+	while(!((Mouse.current_cell_x == target_x) && (Mouse.current_cell_y == target_y))){
+		flood(target_x, target_y);
 
 		HAL_Delay(500);
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		HAL_Delay(300);
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		HAL_Delay(300);
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 
+//		sprintf(send_buffer, "turn\n");
+//		uart_transmit(send_buffer, strlen(send_buffer));
 		turn_to_direction(dir_of_lowest(Mouse.current_cell_x,Mouse.current_cell_y));
-
 		HAL_Delay(500);
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		HAL_Delay(100);
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		HAL_Delay(100);
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-		HAL_Delay(100);
-		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		HAL_Delay(100);
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		HAL_Delay(100);
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+//		HAL_Delay(100);
+//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 
 		move(400,0);
+		save_maze();
 //		print_maze();
-//		if (read_wall(current_cell_x, current_cell_y, rel_to_fixed_dir(LEFT))==0) turn(-90);
-//		else if (read_wall(current_cell_x, current_cell_y, rel_to_fixed_dir(RIGHT))==0) turn(90);
-//		else turn(180);
-		//		save_maze();
-//		if(Mouse.current_cell_x >= MAZE_CELL_WIDTH || Mouse.current_cell_y >= MAZE_CELL_HEIGHT) break;
-		//		sprintf(send_buffer, "L:%.3d M:%.3d R:%.3d E:%d\n",(int)measurements[0],(int)measurements[1] ,(int)measurements[2], (int)htim5.Instance->CNT);
-		//		uart_transmit(send_buffer, strlen(send_buffer));
+
+
 	}
 	sprintf(send_buffer, "why\n");
 	uart_transmit(send_buffer, strlen(send_buffer));
 }
 void update(){
-//	static uint8_t prev_measurements[3] = {255, 255, 255};
+	static uint8_t prev_measurements[3] = {255, 255, 255};
+	static uint8_t L_open_count = 0;
+	static uint8_t R_open_count = 0;
 	//update current cell coords
 	// at 400mm/s, 9-10 counts per loop
 	switch (Mouse.heading) {
 	case 0:
 		// update coords
 		if (L_acc >= COUNTS_PER_CELL && R_acc >= COUNTS_PER_CELL){
+			if (L_open_count == 0){
+				add_wall(Mouse.current_cell_x, Mouse.current_cell_y+1, WEST);
+			}
+			if (R_open_count == 0){
+				add_wall(Mouse.current_cell_x, Mouse.current_cell_y+1, EAST);
+			}
+			L_open_count = 0;
+			R_open_count = 0;
+
 			set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
 			Mouse.current_cell_y ++; //208 = (120*180)/33pi
 
 			L_acc -= COUNTS_PER_CELL;
 			R_acc -= COUNTS_PER_CELL;
+
+			flood(target_x, target_y);
 		}
 		// set middle wall
-		if (L_acc >= 150 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
+		if (L_acc >= 170 && L_acc <= 200 && R_acc >= 170 && R_acc <= 200){
 			if(measurements[1] < 200){
 				add_wall(Mouse.current_cell_x, Mouse.current_cell_y+1, NORTH);
 			}
 		}
 		//set L and R walls
-		if (L_acc >= 120 && L_acc <= 135 && R_acc >= 120 && R_acc <= 135){
-			if(measurements[0] < 100){
-				add_wall(Mouse.current_cell_x, Mouse.current_cell_y+1, WEST);
-			}
-			if(measurements[2] < 100){
-				add_wall(Mouse.current_cell_x, Mouse.current_cell_y+1, EAST);
-			}
+		if (measurements[0]-prev_measurements[0]>55){
+			L_open_count++;
+		}
+		if(measurements[2] -prev_measurements[2]>55){
+			R_open_count++;
 		}
 		break;
 	case 1:
@@ -170,30 +213,40 @@ void update(){
 
 			L_acc -= 295;
 			R_acc -= 295;
+//			flood(Mouse.target_x, Mouse.target_y);
 		}
 		break;
 	case 2:
 		// update coords
 		if (L_acc >= COUNTS_PER_CELL && R_acc >= COUNTS_PER_CELL){
+			if (L_open_count <= 3){
+				add_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, NORTH);
+			}
+			if (R_open_count <= 3){
+				add_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, SOUTH);
+			}
+			L_open_count = 0;
+			R_open_count = 0;
 			set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
 			Mouse.current_cell_x ++; //208 = (120*180)/33pi
 
 			L_acc -= COUNTS_PER_CELL;
 			R_acc -= COUNTS_PER_CELL;
+			flood(target_x, target_y);
 		}
 		// set middle wall
-		if (L_acc >= 150 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
+		if (L_acc >= 170 && L_acc <= 200 && R_acc >= 170 && R_acc <= 200){
 			if(measurements[1] < 200){
 				add_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, EAST);
 			}
 		}
 		//set L and R walls
-		if (L_acc >= 120 && L_acc <= 135 && R_acc >= 120 && R_acc <= 135){
-			if(measurements[0] < 100){
-				add_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, NORTH);
+		if (L_acc >= 100 && L_acc <= 140 && R_acc >= 100 && R_acc <= 140){
+			if(measurements[0] > 100){
+				L_open_count++;
 			}
-			if(measurements[2] < 100){
-				add_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, SOUTH);
+			if(measurements[2] > 100){
+				R_open_count++;
 			}
 		}
 		break;
@@ -205,29 +258,40 @@ void update(){
 
 			L_acc -= 295;
 			R_acc -= 295;
+//			flood(Mouse.target_x, Mouse.target_y);
 		}
 		break;
 	case 4:
 		if (L_acc >= COUNTS_PER_CELL && R_acc >= COUNTS_PER_CELL){
+			if (L_open_count <= 3){
+				add_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, EAST);
+			}
+			if (R_open_count <= 3){
+				add_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, WEST);
+			}
+			L_open_count = 0;
+			R_open_count = 0;
+
 			set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
 			Mouse.current_cell_y --;
 
 			L_acc -= COUNTS_PER_CELL;
 			R_acc -= COUNTS_PER_CELL;
+			flood(target_x, target_y);
 		}
 		// set middle wall
-		if (L_acc >= 150 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
+		if (L_acc >= 170 && L_acc <= 200 && R_acc >= 170 && R_acc <= 200){
 			if(measurements[1] < 200){
 				add_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, SOUTH);
 			}
 		}
 		//set L and R walls
-		if (L_acc >= 120 && L_acc <= 135 && R_acc >= 120 && R_acc <= 135){
-			if(measurements[0] < 100){
-				add_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, EAST);
+		if (L_acc >= 100 && L_acc <= 140 && R_acc >= 100 && R_acc <= 140){
+			if(measurements[0] > 100){
+				L_open_count++;
 			}
-			if(measurements[2] < 100){
-				add_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, WEST);
+			if(measurements[2] > 100){
+				R_open_count++;
 			}
 		}
 		break;
@@ -239,29 +303,42 @@ void update(){
 
 			L_acc -= 295;
 			R_acc -= 295;
+//			flood(Mouse.target_x, Mouse.target_y);
 		}
 		break;
 	case 6:
 		if (L_acc >= COUNTS_PER_CELL && R_acc >= COUNTS_PER_CELL){
+			if (L_open_count <= 3){
+				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, SOUTH);
+			}
+			if (R_open_count <= 3){
+				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, NORTH);
+			}
+			L_open_count = 0;
+			R_open_count = 0;
+			if(measurements[1] < 200){
+				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, WEST);
+			}
 			set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
 			Mouse.current_cell_x --;
 
 			L_acc -= COUNTS_PER_CELL;
 			R_acc -= COUNTS_PER_CELL;
+			flood(target_x, target_y);
 		}
 		// set middle wall
-		if (L_acc >= 150 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
+		if (L_acc >= 170 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
 			if(measurements[1] < 200){
 				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, WEST);
 			}
 		}
 		//set L and R walls
-		if (L_acc >= 120 && L_acc <= 135 && R_acc >= 120 && R_acc <= 135){
-			if(measurements[0] < 100){
-				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, SOUTH);
+		if (L_acc >= 100 && L_acc <= 140 && R_acc >= 100 && R_acc <= 140){
+			if(measurements[0] > 100){
+				L_open_count++;
 			}
-			if(measurements[2] < 100){
-				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, NORTH);
+			if(measurements[2] > 100){
+				R_open_count++;
 			}
 		}
 		break;
@@ -273,6 +350,7 @@ void update(){
 
 			L_acc -= 295;
 			R_acc -= 295;
+//			flood(Mouse.target_x, Mouse.target_y);
 		}
 		break;
 	default:
@@ -281,24 +359,26 @@ void update(){
 //	sprintf(send_buffer, "x:%d Y:%d LC:%d H:%d \n",(int)current_cell_x,(int)current_cell_y ,(int)L_acc, (int)heading);
 //	uart_transmit(send_buffer, strlen(send_buffer));
 
-//	prev_measurements[0] = measurements[0];
-//	prev_measurements[1] = measurements[1];
-//	prev_measurements[2] = measurements[2];
+	prev_measurements[0] = measurements[0];
+	prev_measurements[1] = measurements[1];
+	prev_measurements[2] = measurements[2];
 }
 //	sprintf(send_buffer, "x:%d Y:%d LC:%d H:%d\n",(int)current_cell_x,(int)current_cell_y ,(int)L_acc, (int)heading);
 
 void save_maze(){
 
-	//	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
-	uint32_t Laddress = 0x08020000;
+//	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
+	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(10);}
+	static uint32_t Laddress = 0x08020000;
 	//	uint32_t Raddress = 0x08030000;
 	for (int i = 0; i<MAZE_CELL_HEIGHT; i++){
 		for (int j = 0; j<MAZE_CELL_WIDTH; j++){
-			HAL_FLASH_Program(TYPEPROGRAM_BYTE, Laddress+6*i + j, maze[j][i].walls);
+			HAL_FLASH_Program(TYPEPROGRAM_BYTE, Laddress+j + i*0x10, maze[j][MAZE_CELL_HEIGHT-i-1].walls);//
 		}
 		//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_vals[i]);
 	}
-	//	HAL_FLASH_Lock();
+	Laddress += MAZE_CELL_HEIGHT*0x10;
+//	HAL_FLASH_Lock();
 }
 Direction rel_to_fixed_dir(Relative_Direction mouse_dir){
 	return ((Mouse.heading/2)+ mouse_dir)%4;
@@ -322,19 +402,19 @@ void add_wall(uint8_t x, uint8_t y, uint8_t dir) {
         maze[x][y].walls |= (0b01 << dir);
         if (dir == NORTH) {
             if (y + 1 < MAZE_CELL_HEIGHT) {
-                maze[x][y + 1].walls |= (0b01 << SOUTH);
+            	if ((maze[x][y+1].walls & 0xF0) == 0) maze[x][y + 1].walls |= (0b01 << SOUTH);
             }
         } else if (dir == EAST) {
             if (x + 1 < MAZE_CELL_WIDTH) {
-                maze[x + 1][y].walls |= (0b01 << WEST);
+            	if ((maze[x+1][y].walls & 0xF0) == 0)maze[x + 1][y].walls |= (0b01 << WEST);
             }
         } else if (dir == SOUTH) {
             if (y > 0) {
-                maze[x][y - 1].walls |= (0b01 << NORTH);
+            	if ((maze[x][y-1].walls & 0xF0) == 0)maze[x][y - 1].walls |= (0b01 << NORTH);
             }
         } else if (dir == WEST) {
             if (x > 0) {
-                maze[x - 1][y].walls |= (0b01 << EAST);
+            	if ((maze[x-1][y].walls & 0xF0) == 0)maze[x - 1][y].walls |= (0b01 << EAST);
             }
         }
     }
@@ -396,7 +476,7 @@ void flood(uint8_t ex, uint8_t ey) {
         for (uint8_t x = 0; x < MAZE_CELL_WIDTH; x++) {
             for (uint8_t y = 0; y < MAZE_CELL_HEIGHT; y++) {
                 if (!(x == ex && y == ey)) {
-                	uint8_t min = 255;
+                	uint8_t min = MAZE_CELL_HEIGHT * MAZE_CELL_WIDTH -1;
                     if (read_wall(x, y, NORTH) == 0) {
                         if (maze[x][y + 1].dist < min) {
                             min = maze[x][y + 1].dist;
@@ -417,7 +497,8 @@ void flood(uint8_t ex, uint8_t ey) {
                             min = maze[x - 1][y].dist;
                         }
                     }
-                    if (maze[x][y].dist != min + 1) {
+
+                    if ((min != MAZE_CELL_HEIGHT * MAZE_CELL_WIDTH -1) && (maze[x][y].dist != min + 1)) {
                         change_flag = 1;
                         maze[x][y].dist = min + 1;
                     }

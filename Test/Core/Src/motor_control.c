@@ -86,7 +86,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 
-	while(measurements[1]>60 && velocity != 0 && (dir_of_lowest(Mouse.current_cell_x, Mouse.current_cell_y)==rel_to_fixed_dir(STRAIGHT))){
+	while(measurements[1]>70 && (velocity != 0) && (dir_of_lowest(Mouse.current_cell_x, Mouse.current_cell_y)==rel_to_fixed_dir(STRAIGHT))){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
 
@@ -103,6 +103,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			update();
 //			sprintf(send_buffer, "L:%d R:%d x:%d y:%d\n",(int)L_acc,(int)R_acc, (int)Mouse.current_cell_x, (int)Mouse.current_cell_y );
 //			uart_transmit(send_buffer, strlen(send_buffer));
+
 			kickL = 0;
 			kickR = 0;
 		}
@@ -147,8 +148,8 @@ void turn(int16_t deg){
 			R_error = R_count_target - R_prev_enc_count;
 			R_ctrl_signal = R_Kpt*R_error + R_Kid*(R_error-R_prev_error)*50;
 
-			if (R_error > 0) R_ctrl_signal += R_ff_offset;
-			if (R_error < 0) R_ctrl_signal -= R_ff_offset;
+			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset;
+			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset;
 
 			if (R_ctrl_signal >= 500) R_ctrl_signal = 500;
 			if (R_ctrl_signal <= -500) R_ctrl_signal = -500;
@@ -168,13 +169,11 @@ void turn(int16_t deg){
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, -R_ctrl_signal);
 			}
-
-
 //			L_motor_feedback_control();
 			L_error = L_count_target - L_prev_enc_count;
 			L_ctrl_signal = L_Kpt*L_error + L_Kid*(L_error-L_prev_error)*50;
-			if (L_error > 0) L_ctrl_signal += L_ff_offset;
-			if (L_error < 0) L_ctrl_signal -= L_ff_offset;
+			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
+			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset;
 
 			if (L_ctrl_signal>=500) L_ctrl_signal = 500;
 			if (L_ctrl_signal<=-500) L_ctrl_signal = -500;
@@ -207,12 +206,12 @@ void turn(int16_t deg){
 	set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
 	//need to take into account that after turn, mouse is in middle of cell
 	if (abs(deg) == 90){
-		R_acc += 50;
-		L_acc += 50;
+		R_acc = 50;
+		L_acc = 50;
 	}
 	if (abs(deg) == 180){
-		R_acc += 75;
-		L_acc += 75;
+		R_acc = 75;
+		L_acc = 75;
 	}
 }
 void R_motor_feedback_control(int8_t kick){//speed in mm/s
