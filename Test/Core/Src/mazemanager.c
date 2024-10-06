@@ -198,11 +198,11 @@ void update(){
 			}
 		}
 		//set L and R walls
-		if (measurements[0]-prev_measurements[0]>55){
-			L_open_count++;
+		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 200){
+			L_open_count = 1;
 		}
-		if(measurements[2] -prev_measurements[2]>55){
-			R_open_count++;
+		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 200){
+			R_open_count = 1;
 		}
 		break;
 	case 1:
@@ -219,10 +219,10 @@ void update(){
 	case 2:
 		// update coords
 		if (L_acc >= COUNTS_PER_CELL && R_acc >= COUNTS_PER_CELL){
-			if (L_open_count <= 3){
+			if (L_open_count == 0){
 				add_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, NORTH);
 			}
-			if (R_open_count <= 3){
+			if (R_open_count == 0){
 				add_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, SOUTH);
 			}
 			L_open_count = 0;
@@ -241,13 +241,11 @@ void update(){
 			}
 		}
 		//set L and R walls
-		if (L_acc >= 100 && L_acc <= 140 && R_acc >= 100 && R_acc <= 140){
-			if(measurements[0] > 100){
-				L_open_count++;
-			}
-			if(measurements[2] > 100){
-				R_open_count++;
-			}
+		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 200){
+			L_open_count = 1;
+		}
+		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 200){
+			R_open_count = 1;
 		}
 		break;
 	case 3:
@@ -263,10 +261,10 @@ void update(){
 		break;
 	case 4:
 		if (L_acc >= COUNTS_PER_CELL && R_acc >= COUNTS_PER_CELL){
-			if (L_open_count <= 3){
+			if (L_open_count == 0){
 				add_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, EAST);
 			}
-			if (R_open_count <= 3){
+			if (R_open_count == 0){
 				add_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, WEST);
 			}
 			L_open_count = 0;
@@ -286,13 +284,11 @@ void update(){
 			}
 		}
 		//set L and R walls
-		if (L_acc >= 100 && L_acc <= 140 && R_acc >= 100 && R_acc <= 140){
-			if(measurements[0] > 100){
-				L_open_count++;
-			}
-			if(measurements[2] > 100){
-				R_open_count++;
-			}
+		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 200){
+			L_open_count = 1;
+		}
+		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 200){
+			R_open_count = 1;
 		}
 		break;
 	case 5:
@@ -308,10 +304,10 @@ void update(){
 		break;
 	case 6:
 		if (L_acc >= COUNTS_PER_CELL && R_acc >= COUNTS_PER_CELL){
-			if (L_open_count <= 3){
+			if (L_open_count == 0){
 				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, SOUTH);
 			}
-			if (R_open_count <= 3){
+			if (R_open_count == 0){
 				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, NORTH);
 			}
 			L_open_count = 0;
@@ -333,13 +329,11 @@ void update(){
 			}
 		}
 		//set L and R walls
-		if (L_acc >= 100 && L_acc <= 140 && R_acc >= 100 && R_acc <= 140){
-			if(measurements[0] > 100){
-				L_open_count++;
-			}
-			if(measurements[2] > 100){
-				R_open_count++;
-			}
+		if ((measurements[0] - prev_measurements[0]>50)&& measurements[0] > 200){
+			L_open_count = 1;
+		}
+		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 200){
+			R_open_count = 1;
 		}
 		break;
 	case 7:
@@ -398,26 +392,28 @@ void rem_wall(uint8_t x, uint8_t y, uint8_t dir) {
     }
 }
 void add_wall(uint8_t x, uint8_t y, uint8_t dir) {
-    if ((maze[x][y].walls & 0xF0) == 0) {
-        maze[x][y].walls |= (0b01 << dir);
-        if (dir == NORTH) {
-            if (y + 1 < MAZE_CELL_HEIGHT) {
-            	if ((maze[x][y+1].walls & 0xF0) == 0) maze[x][y + 1].walls |= (0b01 << SOUTH);
-            }
-        } else if (dir == EAST) {
-            if (x + 1 < MAZE_CELL_WIDTH) {
-            	if ((maze[x+1][y].walls & 0xF0) == 0)maze[x + 1][y].walls |= (0b01 << WEST);
-            }
-        } else if (dir == SOUTH) {
-            if (y > 0) {
-            	if ((maze[x][y-1].walls & 0xF0) == 0)maze[x][y - 1].walls |= (0b01 << NORTH);
-            }
-        } else if (dir == WEST) {
-            if (x > 0) {
-            	if ((maze[x-1][y].walls & 0xF0) == 0)maze[x - 1][y].walls |= (0b01 << EAST);
-            }
-        }
-    }
+	if (y < MAZE_CELL_HEIGHT && y >= 0 && x < MAZE_CELL_WIDTH && x >= 0){
+		if ((maze[x][y].walls & 0xF0) == 0) {
+			maze[x][y].walls |= (0b01 << dir);
+			if (dir == NORTH) {
+				if (y + 1 < MAZE_CELL_HEIGHT) {
+					if ((maze[x][y+1].walls & 0xF0) == 0) maze[x][y + 1].walls |= (0b01 << SOUTH);
+				}
+			} else if (dir == EAST) {
+				if (x + 1 < MAZE_CELL_WIDTH) {
+					if ((maze[x+1][y].walls & 0xF0) == 0)maze[x + 1][y].walls |= (0b01 << WEST);
+				}
+			} else if (dir == SOUTH) {
+				if (y > 0) {
+					if ((maze[x][y-1].walls & 0xF0) == 0)maze[x][y - 1].walls |= (0b01 << NORTH);
+				}
+			} else if (dir == WEST) {
+				if (x > 0) {
+					if ((maze[x-1][y].walls & 0xF0) == 0)maze[x - 1][y].walls |= (0b01 << EAST);
+				}
+			}
+		}
+	}
 }
 uint8_t read_wall(uint8_t x, uint8_t y, Direction dir){
 	if ((maze[x][y].walls & (0x01<<dir))==0){
