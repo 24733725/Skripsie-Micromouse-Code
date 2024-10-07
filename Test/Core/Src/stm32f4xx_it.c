@@ -63,7 +63,8 @@ extern TIM_HandleTypeDef htim1;
 extern TIM_HandleTypeDef htim11;
 extern UART_HandleTypeDef huart2;
 /* USER CODE BEGIN EV */
-
+extern uint8_t measurements[3]; //L:M:R
+extern uint8_t prev_measurements[3]; //L:M:R
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -212,6 +213,9 @@ void TIM1_TRG_COM_TIM11_IRQHandler(void)
   /* USER CODE BEGIN TIM1_TRG_COM_TIM11_IRQn 0 */
 	static uint8_t flag = 0;
 	if (flag ==0){
+		prev_measurements[0] = measurements[0];
+		prev_measurements[1] = measurements[1];
+		prev_measurements[2] = measurements[2];
 		TOF_get_measurement();
 		flag = 1;
 	}

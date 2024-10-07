@@ -30,15 +30,18 @@
 #define R_ff_offset 125
 
 //turning
-#define L_Kpt 7
-#define R_Kpt 7
+#define L_Kpt 6
+#define R_Kpt 6
 #define L_Kid 0.2
 #define R_Kid 0.2
 #define Enc_Turn_Error 1
 
-//#define K_pspeederror 10
-//#define K_pdisterror 10
-//#define K_idisterror 0
+//smooth stop
+#define L_Kpss 3
+#define R_Kpss 3
+#define L_Kdss 0.5
+#define R_Kdss 0.5
+#define Enc_SS_Error 1
 
 #define K_kick 30
 
@@ -49,7 +52,7 @@
 #define END_CELL_X 3
 #define END_CELL_Y 0
 
-#define COUNTS_PER_CELL 208
+#define COUNTS_PER_CELL 207
 
 typedef struct {
 	uint8_t walls;  // binary - 0000 1111 last 1st bit: explored y/n and 4 bits:walls from top clockwise

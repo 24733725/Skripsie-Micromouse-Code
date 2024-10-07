@@ -27,6 +27,7 @@ int32_t R_acc = 0;
 int32_t Dist_error_acc = 0;
 
 uint8_t measurements[3]; //L:M:R
+uint8_t prev_measurements[3]; //L:M:R
 
 uint8_t target_x = END_CELL_X;
 uint8_t target_y = END_CELL_Y;

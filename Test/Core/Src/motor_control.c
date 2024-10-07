@@ -78,8 +78,8 @@ void reset_counts(){
 	  __HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 }
 void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
-	L_speed_setpoint = velocity + (WHEEL_SPACING_MM*omega*PI)/(2*180); //mm/s
-	R_speed_setpoint = velocity - (WHEEL_SPACING_MM*omega*PI)/(2*180);//mm/s
+	L_speed_setpoint = velocity + (int)((WHEEL_SPACING_MM*omega*PI)/(2.0*180)); //mm/s
+	R_speed_setpoint = velocity - (int)((WHEEL_SPACING_MM*omega*PI)/(2.0*180));//mm/s
 
 	int8_t kickL = 0;
 	int8_t kickR = 0;
@@ -108,7 +108,14 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			kickR = 0;
 		}
 	}
+//	smooth_stop();
 	uint8_t cnt = 2;
+	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(1);}
+	static uint32_t dadd = 0x08030000;
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, dadd, R_acc);//
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, dadd+8, L_acc);//
+
+
 	while(cnt > 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
@@ -118,6 +125,9 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			cnt --;
 		}
 	}
+	dadd+=0x10;
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, dadd, R_acc);//
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, dadd+8, L_acc);//
 	L_speed_setpoint = 0; //mm/s
 	R_speed_setpoint = 0;//mm/s
 	while((L_prev_enc_count > 1)&&(R_prev_enc_count>1)){
@@ -128,17 +138,21 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			update();
 		}
 	}
+	dadd+=0x10;
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, dadd, R_acc);//
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, dadd+8, L_acc);//
 	reset_counts();
 }
 void turn(int16_t deg){
 	reset_counts();
-	int16_t L_count_target = (int)(1.01*(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360));
-	int16_t R_count_target = (int)(-1.01*(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360));
+	int16_t L_count_target = (int)((WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0));
+	int16_t R_count_target = (int)(-(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0));
 	int16_t L_prev_error = L_count_target;
 	int16_t R_prev_error = R_count_target;
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint8_t turn_cmplt = 0;
+	uint8_t max_loops = (int)(1/0.02); //max time before stop
 	while(turn_cmplt == 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
@@ -151,8 +165,8 @@ void turn(int16_t deg){
 			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset;
 			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset;
 
-			if (R_ctrl_signal >= 500) R_ctrl_signal = 500;
-			if (R_ctrl_signal <= -500) R_ctrl_signal = -500;
+			if (R_ctrl_signal >= 400) R_ctrl_signal = 400;
+			if (R_ctrl_signal <= -400) R_ctrl_signal = -400;
 
 			if (R_ctrl_signal == 0){
 				//motor 1
@@ -175,8 +189,8 @@ void turn(int16_t deg){
 			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
 			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset;
 
-			if (L_ctrl_signal>=500) L_ctrl_signal = 500;
-			if (L_ctrl_signal<=-500) L_ctrl_signal = -500;
+			if (L_ctrl_signal>=400) L_ctrl_signal = 400;
+			if (L_ctrl_signal<=-400) L_ctrl_signal = -400;
 
 			if (L_ctrl_signal == 0){
 				//motor 1
@@ -196,7 +210,8 @@ void turn(int16_t deg){
 			if (abs(L_error) <= Enc_Turn_Error && abs(L_prev_error) <= Enc_Turn_Error && abs(R_error) <= Enc_Turn_Error && abs(R_prev_error) <= Enc_Turn_Error) turn_cmplt=1;
 			L_prev_error = L_error;
 			R_prev_error = R_error;
-
+			max_loops--;
+			if (max_loops == 0) break;
 //			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
 //			uart_transmit(send_buffer, strlen(send_buffer));
 		}
@@ -215,7 +230,6 @@ void turn(int16_t deg){
 	}
 }
 void R_motor_feedback_control(int8_t kick){//speed in mm/s
-	Dist_error_acc += L_acc - R_acc;
 	R_prev_enc_count = htim3.Instance->CNT;
 	R_acc += R_prev_enc_count;
 
@@ -287,4 +301,81 @@ void L_motor_feedback_control(int8_t kick){//speed in mm/s
 		__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 	}
 	htim5.Instance->CNT = 0;
+}
+void smooth_stop(){
+	int16_t diff = (int)((R_acc-L_acc)/2.0);
+	int16_t L_count_target = 25 + diff;
+	int16_t R_count_target = 25 - diff;
+	int16_t L_prev_error = L_count_target;
+	int16_t R_prev_error = R_count_target;
+
+	uint32_t prev_ctr_loop_time = HAL_GetTick();
+	uint8_t cmplt = 0;
+	uint8_t max_loops = (int)(0.3/0.02); //max time before stop
+	while(cmplt == 0){
+		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
+			prev_ctr_loop_time = HAL_GetTick();
+			R_prev_enc_count = htim3.Instance->CNT;
+			L_prev_enc_count = htim5.Instance->CNT;
+			R_acc += R_prev_enc_count;
+			L_acc += L_prev_enc_count;
+//			R_motor_feedback_control();
+			R_error = R_count_target - R_acc;
+			R_ctrl_signal = R_Kpss*R_error + R_Kdss*(R_error-R_prev_error)*50;
+
+			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset;
+			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset;
+
+			if (R_ctrl_signal >= 400) R_ctrl_signal = 400;
+			if (R_ctrl_signal <= -400) R_ctrl_signal = -400;
+
+			if (R_ctrl_signal == 0){
+				//motor 1
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+			}
+			else if (R_ctrl_signal > 0){
+				//motor 1
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, R_ctrl_signal);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+			}
+			else{
+				//motor 1
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, -R_ctrl_signal);
+			}
+//			L_motor_feedback_control();
+			L_error = L_count_target - L_acc;
+			L_ctrl_signal = L_Kpss*L_error + L_Kdss*(L_error-L_prev_error)*50;
+			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
+			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset;
+
+			if (L_ctrl_signal>=400) L_ctrl_signal = 400;
+			if (L_ctrl_signal<=-400) L_ctrl_signal = -400;
+
+			if (L_ctrl_signal == 0){
+				//motor 1
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+			}
+			else if (L_ctrl_signal > 0){
+				//motor 1
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, L_ctrl_signal);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+			}
+			else{
+				//motor 1
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
+			}
+			if (abs(L_error) <= Enc_SS_Error && abs(L_prev_error) <= Enc_SS_Error && abs(R_error) <= Enc_SS_Error && abs(R_prev_error) <= Enc_SS_Error) cmplt=1;
+			L_prev_error = L_error;
+			R_prev_error = R_error;
+			update();
+			max_loops--;
+			if (max_loops == 0) break;
+			htim3.Instance->CNT = 0;
+			htim5.Instance->CNT = 0;
+		}
+	}
 }

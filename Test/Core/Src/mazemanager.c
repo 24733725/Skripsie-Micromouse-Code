@@ -14,6 +14,7 @@
 #include "stdio.h"
 
 extern uint8_t measurements[3]; //L:M:R
+extern uint8_t prev_measurements[3]; //L:M:R
 extern char send_buffer[64];
 extern Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
 
@@ -165,7 +166,6 @@ void explore(){
 	uart_transmit(send_buffer, strlen(send_buffer));
 }
 void update(){
-	static uint8_t prev_measurements[3] = {255, 255, 255};
 	static uint8_t L_open_count = 0;
 	static uint8_t R_open_count = 0;
 	//update current cell coords
@@ -352,10 +352,6 @@ void update(){
 	}
 //	sprintf(send_buffer, "x:%d Y:%d LC:%d H:%d \n",(int)current_cell_x,(int)current_cell_y ,(int)L_acc, (int)heading);
 //	uart_transmit(send_buffer, strlen(send_buffer));
-
-	prev_measurements[0] = measurements[0];
-	prev_measurements[1] = measurements[1];
-	prev_measurements[2] = measurements[2];
 }
 //	sprintf(send_buffer, "x:%d Y:%d LC:%d H:%d\n",(int)current_cell_x,(int)current_cell_y ,(int)L_acc, (int)heading);
 
