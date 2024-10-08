@@ -110,26 +110,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 		}
 	}
 	smooth_stop2(50);
-//	uint8_t cnt = 2;
-//	while(cnt > 0){
-//		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
-//			prev_ctr_loop_time = HAL_GetTick();
-//			R_motor_feedback_control(0);
-//			L_motor_feedback_control(0);
-//			update();
-//			cnt --;
-//		}
-//	}
-//	L_speed_setpoint = 0; //mm/s
-//	R_speed_setpoint = 0;//mm/s
-//	while((L_prev_enc_count > 1)&&(R_prev_enc_count>1)){
-//		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
-//			prev_ctr_loop_time = HAL_GetTick();
-//			R_motor_feedback_control(0);
-//			L_motor_feedback_control(0);
-//			update();
-//		}
-//	}
+
 	reset_counts();
 }
 void turn(int16_t deg){
@@ -141,13 +122,13 @@ void turn(int16_t deg){
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint8_t turn_cmplt = 0;
-	uint8_t max_loops = (int)(1/0.02); //max time before stop
+	uint8_t max_loops = 35; //max time before stop
 	while(turn_cmplt == 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
 			R_prev_enc_count = htim3.Instance->CNT;
 			L_prev_enc_count = htim5.Instance->CNT;
-//			R_motor_feedback_control();
+//			Right;
 			R_error = R_count_target - R_prev_enc_count;
 			R_ctrl_signal = R_Kpt*R_error + R_Kid*(R_error-R_prev_error)*50;
 
@@ -158,21 +139,18 @@ void turn(int16_t deg){
 			if (R_ctrl_signal <= -300) R_ctrl_signal = -300;
 
 			if (R_ctrl_signal == 0){
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
 			}
 			else if (R_ctrl_signal > 0){
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, R_ctrl_signal);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
 			}
 			else{
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, -R_ctrl_signal);
 			}
-//			L_motor_feedback_control();
+//			Left
 			L_error = L_count_target - L_prev_enc_count;
 			L_ctrl_signal = L_Kpt*L_error + L_Kid*(L_error-L_prev_error)*50;
 			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
@@ -182,17 +160,14 @@ void turn(int16_t deg){
 			if (L_ctrl_signal<=-300) L_ctrl_signal = -300;
 
 			if (L_ctrl_signal == 0){
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 			}
 			else if (L_ctrl_signal > 0){
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, L_ctrl_signal);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 			}
 			else{
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}
@@ -348,7 +323,7 @@ void smooth_stop2(uint16_t dist){
 			prev_ctr_loop_time = HAL_GetTick();
 			R_prev_enc_count = htim3.Instance->CNT;
 			L_prev_enc_count = htim5.Instance->CNT;
-//			R_motor_feedback_control();
+//			Right
 			R_error = R_count_target - R_prev_enc_count;
 			R_ctrl_signal = R_Kpss*R_error + R_Kdss*(R_error-R_prev_error)*50;
 
@@ -359,21 +334,18 @@ void smooth_stop2(uint16_t dist){
 			if (R_ctrl_signal <= -300) R_ctrl_signal = -300;
 
 			if (R_ctrl_signal == 0){
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
 			}
 			else if (R_ctrl_signal > 0){
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, R_ctrl_signal);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
 			}
 			else{
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, -R_ctrl_signal);
 			}
-//			L_motor_feedback_control();
+//			Left
 			L_error = L_count_target - L_prev_enc_count;
 			L_ctrl_signal = L_Kpss*L_error + L_Kdss*(L_error-L_prev_error)*50;
 			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
@@ -383,17 +355,14 @@ void smooth_stop2(uint16_t dist){
 			if (L_ctrl_signal<=-300) L_ctrl_signal = -300;
 
 			if (L_ctrl_signal == 0){
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 			}
 			else if (L_ctrl_signal > 0){
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, L_ctrl_signal);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
 			}
 			else{
-				//motor 1
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}

@@ -116,45 +116,23 @@ void turn_to_direction(uint8_t target_dir){
 	uint8_t diff = (4 + target_dir - (Mouse.heading / 2)) % 4;
     if (diff == 1){
     	turn(90);
-//		R_acc += 50;
-//		L_acc += 50;
     }
     else if (diff == 2){
     	turn(180);
-//		R_acc += 75;
-//		L_acc += 75;
     }
     else if (diff == 3){
     	turn(-90);
-//		R_acc += 50;
-//		L_acc += 50;
     }
-//    else{
-//		R_acc += 60;
-//		L_acc += 60;
-//    }
 }
 void explore(){
 
 	while(!((Mouse.current_cell_x == target_x) && (Mouse.current_cell_y == target_y))){
 		flood(target_x, target_y);
 
-		HAL_Delay(250);
-//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//		HAL_Delay(300);
-//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		HAL_Delay(100);
 
-//		sprintf(send_buffer, "turn\n");
-//		uart_transmit(send_buffer, strlen(send_buffer));
 		turn_to_direction(dir_of_lowest(Mouse.current_cell_x,Mouse.current_cell_y));
-		HAL_Delay(250);
-//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//		HAL_Delay(100);
-//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//		HAL_Delay(100);
-//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
-//		HAL_Delay(100);
-//		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+		HAL_Delay(100);
 
 		move(400,0);
 //		save_maze();
@@ -470,7 +448,6 @@ void flood(uint8_t ex, uint8_t ey) {
 	uint8_t nochange_flag = 0;
     maze[ex][ey].dist = 0;
 
-    uint iter = 0;
     while (nochange_flag == 0) {
     	uint8_t change_flag = 0;
 
@@ -511,11 +488,7 @@ void flood(uint8_t ex, uint8_t ey) {
             nochange_flag = 1;
         }
 //        print_maze();
-//    	sprintf(send_buffer, "fl:%d\n", iter);
-//    	uart_transmit(send_buffer, strlen(send_buffer));
-//    	HAL_Delay(15);
-    	iter++;
+
     }
-//	sprintf(send_buffer, "flood cmplt\n");
-//	uart_transmit(send_buffer, strlen(send_buffer));
+
 }
