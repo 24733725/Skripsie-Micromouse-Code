@@ -101,6 +101,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			R_motor_feedback_control(kickR);
 			L_motor_feedback_control(kickL);
 			update();
+			dlog();
 //			sprintf(send_buffer, "L:%d R:%d x:%d y:%d\n",(int)L_acc,(int)R_acc, (int)Mouse.current_cell_x, (int)Mouse.current_cell_y );
 //			uart_transmit(send_buffer, strlen(send_buffer));
 
@@ -198,6 +199,7 @@ void turn(int16_t deg){
 			if (abs(L_error) <= Enc_Turn_Error && abs(L_prev_error) <= Enc_Turn_Error && abs(R_error) <= Enc_Turn_Error && abs(R_prev_error) <= Enc_Turn_Error) turn_cmplt=1;
 			L_prev_error = L_error;
 			R_prev_error = R_error;
+			dlog();
 			max_loops--;
 			if (max_loops == 0) break;
 //			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
@@ -398,6 +400,7 @@ void smooth_stop2(uint16_t dist){
 			if (abs(L_error) <= Enc_SS_Error && abs(L_prev_error) <= Enc_SS_Error && abs(R_error) <= Enc_SS_Error && abs(R_prev_error) <= Enc_SS_Error) stp_cmplt=1;
 			L_prev_error = L_error;
 			R_prev_error = R_error;
+			dlog();
 			max_loops--;
 			if (max_loops == 0) break;
 		}

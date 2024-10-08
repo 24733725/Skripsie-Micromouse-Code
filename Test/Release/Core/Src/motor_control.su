@@ -1,9 +1,9 @@
 ../Core/Src/motor_control.c:39:6:motorsInit	16	static
 ../Core/Src/motor_control.c:57:6:reset_counts	0	static
-../Core/Src/motor_control.c:134:6:turn	56	static
-../Core/Src/motor_control.c:220:6:R_motor_feedback_control	24	static
-../Core/Src/motor_control.c:257:6:L_motor_feedback_control	24	static
-../Core/Src/motor_control.c:293:6:smooth_stop	32	static
-../Core/Src/motor_control.c:311:6:smooth_stop1	24	static
-../Core/Src/motor_control.c:332:6:smooth_stop2	48	static
+../Core/Src/motor_control.c:135:6:turn	56	static
+../Core/Src/motor_control.c:222:6:R_motor_feedback_control	24	static
+../Core/Src/motor_control.c:259:6:L_motor_feedback_control	24	static
+../Core/Src/motor_control.c:295:6:smooth_stop	32	static
+../Core/Src/motor_control.c:313:6:smooth_stop1	24	static
+../Core/Src/motor_control.c:334:6:smooth_stop2	48	static
 ../Core/Src/motor_control.c:80:6:move	24	static

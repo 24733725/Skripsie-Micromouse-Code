@@ -139,7 +139,7 @@ void explore(){
 	while(!((Mouse.current_cell_x == target_x) && (Mouse.current_cell_y == target_y))){
 		flood(target_x, target_y);
 
-		HAL_Delay(500);
+		HAL_Delay(250);
 //		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 //		HAL_Delay(300);
 //		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
@@ -147,7 +147,7 @@ void explore(){
 //		sprintf(send_buffer, "turn\n");
 //		uart_transmit(send_buffer, strlen(send_buffer));
 		turn_to_direction(dir_of_lowest(Mouse.current_cell_x,Mouse.current_cell_y));
-		HAL_Delay(500);
+		HAL_Delay(250);
 //		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 //		HAL_Delay(100);
 //		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
@@ -370,8 +370,14 @@ void save_maze(){
 	Laddress += MAZE_CELL_HEIGHT*0x10;
 //	HAL_FLASH_Lock();
 }
-void log(){
-
+void dlog(){
+	static uint32_t address = 0x08030000;
+	// Lacc, R_acc, heading, time
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address, L_acc);
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address+4, R_acc);
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address+8, Mouse.heading);
+	HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, address+12, HAL_GetTick());
+	address += 0x10;
 }
 Direction rel_to_fixed_dir(Relative_Direction mouse_dir){
 	return ((Mouse.heading/2)+ mouse_dir)%4;

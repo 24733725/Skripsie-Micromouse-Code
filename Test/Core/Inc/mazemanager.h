@@ -15,7 +15,7 @@ void maze_init();
 void explore();
 void update();
 void save_maze();
-void log();
+void dlog();
 void print_maze();
 Direction rel_to_fixed_dir(Relative_Direction mouse_dir);
 void rem_wall(uint8_t x, uint8_t y, Direction dir);

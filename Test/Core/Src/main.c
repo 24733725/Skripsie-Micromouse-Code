@@ -143,7 +143,7 @@ int main(void)
 	HAL_Delay(200);
 	uart_startup_transmit();
 //	HAL_ADC_Start(&hadc1);
-
+	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(10);}
 	HAL_Delay(3000);
 
 	R_speed_setpoint = 0;
