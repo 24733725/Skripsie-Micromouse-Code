@@ -38,12 +38,12 @@
 
 //smooth stop
 #define L_Kpss 3
-#define R_Kpss 3
-#define L_Kdss 0.5
-#define R_Kdss 0.5
+#define R_Kpss 4
+#define L_Kdss 0.32
+#define R_Kdss 0.3
 #define Enc_SS_Error 1
 
-#define K_kick 30
+#define K_kick 25
 
 #define TOF_ADDRESS 0x29<<1
 
@@ -52,7 +52,7 @@
 #define END_CELL_X 3
 #define END_CELL_Y 0
 
-#define COUNTS_PER_CELL 207
+#define COUNTS_PER_CELL 208
 
 typedef struct {
 	uint8_t walls;  // binary - 0000 1111 last 1st bit: explored y/n and 4 bits:walls from top clockwise

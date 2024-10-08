@@ -157,7 +157,7 @@ void explore(){
 //		HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 
 		move(400,0);
-		save_maze();
+//		save_maze();
 //		print_maze();
 
 
@@ -369,6 +369,9 @@ void save_maze(){
 	}
 	Laddress += MAZE_CELL_HEIGHT*0x10;
 //	HAL_FLASH_Lock();
+}
+void log(){
+
 }
 Direction rel_to_fixed_dir(Relative_Direction mouse_dir){
 	return ((Mouse.heading/2)+ mouse_dir)%4;

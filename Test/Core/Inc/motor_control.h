@@ -16,7 +16,9 @@ void turn(int16_t deg);//dist in mm
 void R_motor_feedback_control(int8_t kick);
 void L_motor_feedback_control(int8_t kick);
 void reset_counts();
-void smooth_stop();
+void smooth_stop(uint16_t ms);
+void smooth_stop1(uint16_t ms);
+void smooth_stop2(uint16_t dist);
 
 
 #endif /* INC_MOTOR_CONTROL_H_ */
