@@ -171,7 +171,7 @@ int main(void)
 
 		}
 		// main control loop: CONTROL_LOOP_PERIOD_MS
-		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
+		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
 			sprintf(send_buffer, "L:%.3d M:%.3d R:%.3d LE:%.3d RE:%.3d\n",(int)measurements[0],(int)measurements[1] ,(int)measurements[2], (int)htim5.Instance->CNT, (int)htim3.Instance->CNT);
 			uart_transmit(send_buffer, strlen(send_buffer));

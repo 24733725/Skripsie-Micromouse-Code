@@ -10,7 +10,8 @@
 
 #include "inttypes.h"
 
-#define CONTROL_LOOP_PERIOD_MS 20
+#define STR_CONTROL_LOOP_PERIOD_MS 20
+#define TURN_CONTROL_LOOP_PERIOD_MS 10
 #define COUNTS_PER_ROTATION 120
 #define WHEEL_DIAMETER_MM 33
 #define WHEEL_SPACING_MM 81
@@ -30,15 +31,13 @@
 #define R_ff_offset 125
 
 //turning
-#define L_Kpt 6
-#define R_Kpt 6
-#define L_Kdt 0.2
-#define R_Kdt 0.2
-#define L_Kit 0.1
-#define R_Kit 0.1
+#define L_Kpt 15
+#define R_Kpt 15
+#define L_Kdt 0.5
+#define R_Kdt 0.5
 #define R_ff_offset_t 125
 #define L_ff_offset_t 125
-#define Enc_Turn_Error 1
+#define Enc_Turn_Error 2
 
 //smooth stop
 #define L_Kpss 2.9
