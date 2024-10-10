@@ -12,7 +12,9 @@
 
 void motorsInit();
 void move(int16_t velocity, int16_t omega);
-void turn(int16_t deg);//dist in mm
+void smooth_turn_L();
+void smooth_turn_R();
+void turn(int16_t deg);
 void R_motor_feedback_control(int8_t kick);
 void L_motor_feedback_control(int8_t kick);
 void reset_counts();

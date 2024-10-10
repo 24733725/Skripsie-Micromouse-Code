@@ -87,7 +87,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 
 	while(measurements[1]>70 && (velocity != 0) && (dir_of_lowest(Mouse.current_cell_x, Mouse.current_cell_y)==rel_to_fixed_dir(STRAIGHT))){
-		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
+		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
 
 			if (measurements[0]<60) {
@@ -98,6 +98,14 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 				kickR = 1;
 				kickL = -1;
 			}
+//			else if (measurements[0]>80 && read_left_wall(Mouse.current_cell_x, Mouse.current_cell_y)){
+//				kickR = 1;
+//				kickL = -1;
+//			}
+//			else if (measurements[2]>80 && read_right_wall(Mouse.current_cell_x, Mouse.current_cell_y)){
+//				kickR = -1;
+//				kickL = 1;
+//			}
 			R_motor_feedback_control(kickR);
 			L_motor_feedback_control(kickL);
 			update();
@@ -109,7 +117,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			kickR = 0;
 		}
 	}
-	smooth_stop2(50);
+	smooth_stop2(45);
 
 	reset_counts();
 }
@@ -122,18 +130,21 @@ void turn(int16_t deg){
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint8_t turn_cmplt = 0;
-	uint8_t max_loops = 35; //max time before stop
+	uint16_t max_loops = 40; //max time before stop
 	while(turn_cmplt == 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
 			prev_ctr_loop_time = HAL_GetTick();
 			R_prev_enc_count = htim3.Instance->CNT;
 			L_prev_enc_count = htim5.Instance->CNT;
+			R_acc = htim3.Instance->CNT;
+			L_acc = htim5.Instance->CNT;
 //			Right;
 			R_error = R_count_target - R_prev_enc_count;
-			R_ctrl_signal = R_Kpt*R_error + R_Kid*(R_error-R_prev_error)*50;
+			//if (abs(R_error)<5) R_acc_error += R_error;
+			R_ctrl_signal = R_Kpt*R_error + R_Kdt*(R_error-R_prev_error)*50;// + R_Kit*R_acc_error;
 
-			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset;
-			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset;
+			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset_t;
+			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset_t;
 
 			if (R_ctrl_signal >= 300) R_ctrl_signal = 300;
 			if (R_ctrl_signal <= -300) R_ctrl_signal = -300;
@@ -152,9 +163,10 @@ void turn(int16_t deg){
 			}
 //			Left
 			L_error = L_count_target - L_prev_enc_count;
-			L_ctrl_signal = L_Kpt*L_error + L_Kid*(L_error-L_prev_error)*50;
-			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
-			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset;
+			//if (abs(L_error)<5)L_acc_error += L_error;
+			L_ctrl_signal = L_Kpt*L_error + L_Kdt*(L_error-L_prev_error)*50;// + L_Kit*L_acc_error;
+			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset_t;
+			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset_t;
 
 			if (L_ctrl_signal>=300) L_ctrl_signal = 300;
 			if (L_ctrl_signal<=-300) L_ctrl_signal = -300;
@@ -193,6 +205,114 @@ void turn(int16_t deg){
 		R_acc = 75;
 		L_acc = 75;
 	}
+}
+void smooth_turn_L(){
+	reset_counts();
+	int16_t R_count_target = (int)((WHEEL_SPACING_MM*180*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0));
+	int16_t R_prev_error = R_count_target;
+
+	uint32_t prev_ctr_loop_time = HAL_GetTick();
+	uint8_t turn_cmplt = 0;
+	uint16_t max_loops = 40; //max time before stop
+	while(turn_cmplt == 0){
+		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
+			prev_ctr_loop_time = HAL_GetTick();
+			R_prev_enc_count = htim3.Instance->CNT;
+			L_prev_enc_count = htim5.Instance->CNT;
+			R_acc = htim3.Instance->CNT;
+			L_acc = htim5.Instance->CNT;
+//			Right;
+			R_error = R_count_target - R_prev_enc_count;
+			//if (abs(R_error)<5) R_acc_error += R_error;
+			R_ctrl_signal = R_Kpt*R_error + R_Kdt*(R_error-R_prev_error)*50;// + R_Kit*R_acc_error;
+
+			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset_t;
+			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset_t;
+
+			if (R_ctrl_signal >= 300) R_ctrl_signal = 300;
+			if (R_ctrl_signal <= -300) R_ctrl_signal = -300;
+
+			if (R_ctrl_signal == 0){
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+			}
+			else if (R_ctrl_signal > 0){
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, R_ctrl_signal);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+			}
+			else{
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, -R_ctrl_signal);
+			}
+			if (abs(R_error) <= Enc_Turn_Error && abs(R_prev_error) <= Enc_Turn_Error) turn_cmplt=1;
+
+			R_prev_error = R_error;
+			dlog();
+			max_loops--;
+			if (max_loops == 0) break;
+//			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
+//			uart_transmit(send_buffer, strlen(send_buffer));
+		}
+	}
+	Mouse.heading = (8 + Mouse.heading + (8+(8*-90)/360)%8)%8;
+	reset_counts();
+	set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
+	//need to take into account that after turn, mouse is in middle of cell
+	R_acc = 50;
+	L_acc = 50;
+}
+void smooth_turn_R(){
+	reset_counts();
+	int16_t L_count_target = (int)((WHEEL_SPACING_MM*180*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0));
+	int16_t L_prev_error = L_count_target;
+
+	uint32_t prev_ctr_loop_time = HAL_GetTick();
+	uint8_t turn_cmplt = 0;
+	uint16_t max_loops = 40; //max time before stop
+	while(turn_cmplt == 0){
+		if (HAL_GetTick() - prev_ctr_loop_time > CONTROL_LOOP_PERIOD_MS){
+			prev_ctr_loop_time = HAL_GetTick();
+			R_prev_enc_count = htim3.Instance->CNT;
+			L_prev_enc_count = htim5.Instance->CNT;
+			R_acc = htim3.Instance->CNT;
+			L_acc = htim5.Instance->CNT;
+			L_error = L_count_target - L_prev_enc_count;
+			//if (abs(L_error)<5)L_acc_error += L_error;
+			L_ctrl_signal = L_Kpt*L_error + L_Kdt*(L_error-L_prev_error)*50;// + L_Kit*L_acc_error;
+			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset_t;
+			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset_t;
+
+			if (L_ctrl_signal>=300) L_ctrl_signal = 300;
+			if (L_ctrl_signal<=-300) L_ctrl_signal = -300;
+
+			if (L_ctrl_signal == 0){
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+			}
+			else if (L_ctrl_signal > 0){
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, L_ctrl_signal);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+			}
+			else{
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
+			}
+			if (abs(L_error) <= Enc_Turn_Error && abs(L_prev_error) <= Enc_Turn_Error) turn_cmplt=1;
+			L_prev_error = L_error;
+
+			dlog();
+			max_loops--;
+			if (max_loops == 0) break;
+//			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
+//			uart_transmit(send_buffer, strlen(send_buffer));
+		}
+	}
+	Mouse.heading = (8 + Mouse.heading + (8+(8*-90)/360)%8)%8;
+	reset_counts();
+	set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
+	//need to take into account that after turn, mouse is in middle of cell
+	R_acc = 50;
+	L_acc = 50;
 }
 void R_motor_feedback_control(int8_t kick){//speed in mm/s
 	R_prev_enc_count = htim3.Instance->CNT;

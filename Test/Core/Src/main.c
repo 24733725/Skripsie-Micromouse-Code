@@ -144,11 +144,13 @@ int main(void)
 	uart_startup_transmit();
 //	HAL_ADC_Start(&hadc1);
 	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(10);}
-	HAL_Delay(3000);
+//	HAL_Delay(3000);
 
 	R_speed_setpoint = 0;
 	L_speed_setpoint = 0;
-
+	while(measurements[1]>100) HAL_Delay(100);
+	while(measurements[1]<100) HAL_Delay(100);
+	HAL_Delay(1000);
 	explore();
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();

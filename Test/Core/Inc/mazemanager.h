@@ -21,6 +21,8 @@ Direction rel_to_fixed_dir(Relative_Direction mouse_dir);
 void rem_wall(uint8_t x, uint8_t y, Direction dir);
 void add_wall(uint8_t x, uint8_t y, uint8_t dir);
 uint8_t read_wall(uint8_t x, uint8_t y, Direction dir);
+uint8_t read_left_wall(uint8_t x, uint8_t y);
+uint8_t read_right_wall(uint8_t x, uint8_t y);
 void set_explored(uint8_t x, uint8_t y);
 uint8_t get_explored(uint8_t x, uint8_t y);
 uint8_t dir_of_lowest(uint8_t x, uint8_t y);

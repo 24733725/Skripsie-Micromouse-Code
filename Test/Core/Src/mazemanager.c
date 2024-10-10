@@ -116,26 +116,29 @@ void turn_to_direction(uint8_t target_dir){
 	uint8_t diff = (4 + target_dir - (Mouse.heading / 2)) % 4;
     if (diff == 1){
     	turn(90);
+//    	smooth_turn_R();
     }
     else if (diff == 2){
     	turn(180);
     }
     else if (diff == 3){
     	turn(-90);
+//    	smooth_turn_L();
     }
 }
 void explore(){
 
 	while(!((Mouse.current_cell_x == target_x) && (Mouse.current_cell_y == target_y))){
+		if (measurements[1]<20) break;
 		flood(target_x, target_y);
 
-		HAL_Delay(100);
+		HAL_Delay(150);
 
 		turn_to_direction(dir_of_lowest(Mouse.current_cell_x,Mouse.current_cell_y));
-		HAL_Delay(100);
+		HAL_Delay(150);
 
 		move(400,0);
-//		save_maze();
+		save_maze();
 //		print_maze();
 
 
@@ -170,7 +173,7 @@ void update(){
 			flood(target_x, target_y);
 		}
 		// set middle wall
-		if (L_acc >= 170 && L_acc <= 200 && R_acc >= 170 && R_acc <= 200){
+		if (L_acc >= 150 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
 			if(measurements[1] < 200){
 				add_wall(Mouse.current_cell_x, Mouse.current_cell_y+1, NORTH);
 			}
@@ -213,7 +216,7 @@ void update(){
 			flood(target_x, target_y);
 		}
 		// set middle wall
-		if (L_acc >= 170 && L_acc <= 200 && R_acc >= 170 && R_acc <= 200){
+		if (L_acc >= 150 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
 			if(measurements[1] < 200){
 				add_wall(Mouse.current_cell_x+1, Mouse.current_cell_y, EAST);
 			}
@@ -256,7 +259,7 @@ void update(){
 			flood(target_x, target_y);
 		}
 		// set middle wall
-		if (L_acc >= 170 && L_acc <= 200 && R_acc >= 170 && R_acc <= 200){
+		if (L_acc >= 150 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
 			if(measurements[1] < 200){
 				add_wall(Mouse.current_cell_x, Mouse.current_cell_y-1, SOUTH);
 			}
@@ -301,7 +304,7 @@ void update(){
 			flood(target_x, target_y);
 		}
 		// set middle wall
-		if (L_acc >= 170 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
+		if (L_acc >= 150 && L_acc <= 200 && R_acc >= 150 && R_acc <= 200){
 			if(measurements[1] < 200){
 				add_wall(Mouse.current_cell_x-1, Mouse.current_cell_y, WEST);
 			}
@@ -400,6 +403,18 @@ void add_wall(uint8_t x, uint8_t y, uint8_t dir) {
 }
 uint8_t read_wall(uint8_t x, uint8_t y, Direction dir){
 	if ((maze[x][y].walls & (0x01<<dir))==0){
+		return 0;
+	}
+	else return 1;
+}
+uint8_t read_left_wall(uint8_t x, uint8_t y){
+	if ((maze[x][y].walls & (0x01<<rel_to_fixed_dir(LEFT)))==0){
+		return 0;
+	}
+	else return 1;
+}
+uint8_t read_right_wall(uint8_t x, uint8_t y){
+	if ((maze[x][y].walls & (0x01<<rel_to_fixed_dir(RIGHT)))==0){
 		return 0;
 	}
 	else return 1;
