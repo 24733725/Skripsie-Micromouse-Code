@@ -13,6 +13,7 @@
 
 void maze_init();
 void explore();
+void go_home();
 void update();
 void save_maze();
 void dlog();

@@ -120,6 +120,7 @@ void turn_to_direction(uint8_t target_dir){
     }
     else if (diff == 2){
     	turn(180);
+    	reverse(-100);
     }
     else if (diff == 3){
     	turn(-90);
@@ -132,12 +133,35 @@ void explore(){
 		if (measurements[1]<20) break;
 		flood(target_x, target_y);
 
-		HAL_Delay(150);
+		HAL_Delay(100);
 
 		turn_to_direction(dir_of_lowest(Mouse.current_cell_x,Mouse.current_cell_y));
-		HAL_Delay(150);
+		HAL_Delay(100);
 
-		move(400,0);
+		move(300,0);
+		save_maze();
+//		print_maze();
+
+
+	}
+	sprintf(send_buffer, "why\n");
+	uart_transmit(send_buffer, strlen(send_buffer));
+}
+void go_home(){
+	target_x = 0;
+	target_y = 0;
+	flood(target_x, target_y);
+	HAL_Delay(500);
+	while(!((Mouse.current_cell_x == target_x) && (Mouse.current_cell_y == target_y))){
+		if (measurements[1]<20) break;
+		flood(target_x, target_y);
+
+		HAL_Delay(100);
+
+		turn_to_direction(dir_of_lowest(Mouse.current_cell_x,Mouse.current_cell_y));
+		HAL_Delay(100);
+
+		move(300,0);
 		save_maze();
 //		print_maze();
 

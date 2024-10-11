@@ -117,8 +117,27 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			kickR = 0;
 		}
 	}
-	smooth_stop2(45);
+	smooth_stop2(50);
 
+	reset_counts();
+}
+void reverse(int16_t velocity){ // velocity in mm/s, omega in deg/s
+	L_speed_setpoint = velocity; //mm/s
+	R_speed_setpoint = velocity;//mm/s
+
+	uint32_t prev_ctr_loop_time = HAL_GetTick();
+	uint8_t count = 30;
+	while(count>0){
+		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS-1){
+			prev_ctr_loop_time = HAL_GetTick();
+
+			R_motor_feedback_control(0);
+			L_motor_feedback_control(0);
+			update();
+			dlog();
+			count--;
+		}
+	}
 	reset_counts();
 }
 void turn(int16_t deg){
@@ -146,8 +165,8 @@ void turn(int16_t deg){
 			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset_t;
 			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset_t;
 
-			if (R_ctrl_signal >= 400) R_ctrl_signal = 400;
-			if (R_ctrl_signal <= -400) R_ctrl_signal = -400;
+			if (R_ctrl_signal >= 300) R_ctrl_signal = 300;
+			if (R_ctrl_signal <= -300) R_ctrl_signal = -300;
 
 			if (R_ctrl_signal == 0){
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
@@ -168,8 +187,8 @@ void turn(int16_t deg){
 			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset_t;
 			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset_t;
 
-			if (L_ctrl_signal>=400) L_ctrl_signal = 400;
-			if (L_ctrl_signal<=-400) L_ctrl_signal = -400;
+			if (L_ctrl_signal>=300) L_ctrl_signal = 300;
+			if (L_ctrl_signal<=-300) L_ctrl_signal = -300;
 
 			if (L_ctrl_signal == 0){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
@@ -208,8 +227,8 @@ void turn(int16_t deg){
 		L_acc = 50;
 	}
 	if (abs(deg) == 180){
-		R_acc = 75;
-		L_acc = 75;
+		R_acc = 70;
+		L_acc = 70;
 	}
 }
 void smooth_turn_L(){
@@ -435,9 +454,9 @@ void smooth_stop1(uint16_t ms){
 void smooth_stop2(uint16_t dist){
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
-	int16_t diff = R_acc - L_acc;
-	int16_t L_count_target = dist - diff;
-	int16_t R_count_target = dist - diff;
+//	int16_t diff = R_acc - L_acc;
+	int16_t L_count_target = dist;
+	int16_t R_count_target = dist;
 	int16_t L_prev_error = L_count_target;
 	int16_t R_prev_error = R_count_target;
 
@@ -445,7 +464,7 @@ void smooth_stop2(uint16_t dist){
 	uint8_t stp_cmplt = 0;
 	uint8_t max_loops = 16; //max time before stop
 	while(stp_cmplt == 0){
-		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS-1){
+		if (HAL_GetTick() - prev_ctr_loop_time > TURN_CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
 			R_prev_enc_count = htim3.Instance->CNT;
 			L_prev_enc_count = htim5.Instance->CNT;
@@ -492,7 +511,12 @@ void smooth_stop2(uint16_t dist){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}
-			if (abs(L_error) <= Enc_SS_Error && abs(L_prev_error) <= Enc_SS_Error && abs(R_error) <= Enc_SS_Error && abs(R_prev_error) <= Enc_SS_Error) stp_cmplt=1;
+
+			if (L_error <= Enc_Turn_Error && L_error >= -Enc_Turn_Error  && L_error == L_prev_error) {
+				if (R_error <= Enc_Turn_Error && R_error >= -Enc_Turn_Error  && R_error == R_prev_error) {
+					stp_cmplt=1;
+				}
+			}
 			L_prev_error = L_error;
 			R_prev_error = R_error;
 			dlog();

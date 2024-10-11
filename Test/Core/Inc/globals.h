@@ -31,22 +31,22 @@
 #define R_ff_offset 125
 
 //turning
-#define L_Kpt 15
-#define R_Kpt 15
+#define L_Kpt 17
+#define R_Kpt 16
 #define L_Kdt 0.5
 #define R_Kdt 0.5
 #define R_ff_offset_t 125
 #define L_ff_offset_t 125
-#define Enc_Turn_Error 2
+#define Enc_Turn_Error 1
 
 //smooth stop
-#define L_Kpss 2.9
-#define R_Kpss 3.9
-#define L_Kdss 0.32
-#define R_Kdss 0.3
+#define L_Kpss 3
+#define R_Kpss 3
+#define L_Kdss 0.5
+#define R_Kdss 0.5
 #define Enc_SS_Error 1
 
-#define K_kick 25
+#define K_kick 22
 
 #define TOF_ADDRESS 0x29<<1
 
