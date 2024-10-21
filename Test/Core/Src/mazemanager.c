@@ -120,7 +120,7 @@ void turn_to_direction(uint8_t target_dir){
     }
     else if (diff == 2){
     	turn(180);
-    	reverse(-100);
+    	reverse(-150);
     }
     else if (diff == 3){
     	turn(-90);
