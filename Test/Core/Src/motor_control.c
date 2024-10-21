@@ -33,6 +33,7 @@ extern int32_t L_acc;
 extern int32_t R_acc;
 extern int32_t Dist_error_acc;
 
+extern Cell exp_maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
 extern MouseStruct Mouse;
 extern uint8_t measurements[3]; //L:M:R
 extern char send_buffer[64];
@@ -86,7 +87,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 
-	while(measurements[1]>70 && (velocity != 0) && (dir_of_lowest(Mouse.current_cell_x, Mouse.current_cell_y)==rel_to_fixed_dir(STRAIGHT))){
+	while(measurements[1]>70 && (velocity != 0) && (dir_of_lowest(exp_maze, Mouse.current_cell_x, Mouse.current_cell_y)==rel_to_fixed_dir(STRAIGHT))){
 		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
 
@@ -98,14 +99,6 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 				kickR = 1;
 				kickL = -1;
 			}
-//			else if (measurements[0]>80 && read_left_wall(Mouse.current_cell_x, Mouse.current_cell_y)){
-//				kickR = 1;
-//				kickL = -1;
-//			}
-//			else if (measurements[2]>80 && read_right_wall(Mouse.current_cell_x, Mouse.current_cell_y)){
-//				kickR = -1;
-//				kickL = 1;
-//			}
 			R_motor_feedback_control(kickR);
 			L_motor_feedback_control(kickL);
 			update();
@@ -117,7 +110,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			kickR = 0;
 		}
 	}
-	smooth_stop2(50);
+	smooth_stop(50);
 
 	reset_counts();
 }
@@ -220,7 +213,7 @@ void turn(int16_t deg){
 	}
 	Mouse.heading = (8 + Mouse.heading + (8+(8*deg)/360)%8)%8;
 	reset_counts();
-	set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
+	set_explored(exp_maze, Mouse.current_cell_x, Mouse.current_cell_y);
 	//need to take into account that after turn, mouse is in middle of cell
 	if (abs(deg) == 90){
 		R_acc = 50;
@@ -281,7 +274,7 @@ void smooth_turn_L(){
 	}
 	Mouse.heading = (8 + Mouse.heading + (8+(8*-90)/360)%8)%8;
 	reset_counts();
-	set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
+	set_explored(exp_maze, Mouse.current_cell_x, Mouse.current_cell_y);
 	//need to take into account that after turn, mouse is in middle of cell
 	R_acc = 50;
 	L_acc = 50;
@@ -334,7 +327,7 @@ void smooth_turn_R(){
 	}
 	Mouse.heading = (8 + Mouse.heading + (8+(8*-90)/360)%8)%8;
 	reset_counts();
-	set_explored(Mouse.current_cell_x, Mouse.current_cell_y);
+	set_explored(exp_maze, Mouse.current_cell_x, Mouse.current_cell_y);
 	//need to take into account that after turn, mouse is in middle of cell
 	R_acc = 50;
 	L_acc = 50;
@@ -412,46 +405,46 @@ void L_motor_feedback_control(int8_t kick){//speed in mm/s
 	}
 	htim5.Instance->CNT = 0;
 }
-void smooth_stop(uint16_t ms){
-	uint16_t num_steps = ms/STR_CONTROL_LOOP_PERIOD_MS;
-	uint16_t speed_step = R_speed_setpoint/num_steps;
-
-	uint32_t prev_ctr_loop_time = HAL_GetTick();
-
-	while(num_steps > 0){
-		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS){
-			prev_ctr_loop_time = HAL_GetTick();
-			R_speed_setpoint = num_steps*speed_step;
-			L_speed_setpoint = num_steps*speed_step;
-			R_motor_feedback_control(0);
-			L_motor_feedback_control(0);
-			update();
-			num_steps--;
-		}
-	}
-}
-void smooth_stop1(uint16_t ms){
-	uint16_t num_steps = ms/STR_CONTROL_LOOP_PERIOD_MS;
-
-	uint32_t prev_ctr_loop_time = HAL_GetTick();
-
-	while(num_steps > 0){
-		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS){
-			prev_ctr_loop_time = HAL_GetTick();
-			//motor L
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
-			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 100);
-			//motor R
-			__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
-			__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 100);
-
-			update();
-			num_steps--;
-		}
-	}
-	reset_counts();
-}
-void smooth_stop2(uint16_t dist){
+//void smooth_stop(uint16_t ms){
+//	uint16_t num_steps = ms/STR_CONTROL_LOOP_PERIOD_MS;
+//	uint16_t speed_step = R_speed_setpoint/num_steps;
+//
+//	uint32_t prev_ctr_loop_time = HAL_GetTick();
+//
+//	while(num_steps > 0){
+//		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS){
+//			prev_ctr_loop_time = HAL_GetTick();
+//			R_speed_setpoint = num_steps*speed_step;
+//			L_speed_setpoint = num_steps*speed_step;
+//			R_motor_feedback_control(0);
+//			L_motor_feedback_control(0);
+//			update();
+//			num_steps--;
+//		}
+//	}
+//}
+//void smooth_stop1(uint16_t ms){
+//	uint16_t num_steps = ms/STR_CONTROL_LOOP_PERIOD_MS;
+//
+//	uint32_t prev_ctr_loop_time = HAL_GetTick();
+//
+//	while(num_steps > 0){
+//		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS){
+//			prev_ctr_loop_time = HAL_GetTick();
+//			//motor L
+//			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+//			__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 100);
+//			//motor R
+//			__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+//			__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 100);
+//
+//			update();
+//			num_steps--;
+//		}
+//	}
+//	reset_counts();
+//}
+void smooth_stop(uint16_t dist){
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 //	int16_t diff = R_acc - L_acc;
@@ -522,6 +515,76 @@ void smooth_stop2(uint16_t dist){
 			dlog();
 			max_loops--;
 			if (max_loops == 0) break;
+		}
+	}
+}
+void race_forward(uint8_t hcounts){
+	uint32_t prev_ctr_loop_time = HAL_GetTick();
+//	int16_t diff = R_acc - L_acc;
+	int16_t L_count_target = hcounts*COUNTS_PER_CELL;
+	int16_t R_count_target = hcounts*COUNTS_PER_CELL;
+	int16_t L_prev_error = L_count_target;
+	int16_t R_prev_error = R_count_target;
+
+	reset_counts();
+	uint8_t stp_cmplt = 0;
+	while(stp_cmplt == 0){
+		if (HAL_GetTick() - prev_ctr_loop_time > TURN_CONTROL_LOOP_PERIOD_MS-1){
+			prev_ctr_loop_time = HAL_GetTick();
+			R_prev_enc_count = htim3.Instance->CNT;
+			L_prev_enc_count = htim5.Instance->CNT;
+//			Right
+			R_error = R_count_target - R_prev_enc_count;
+			R_ctrl_signal = R_Kpt*R_error + R_Kdt*(R_error-R_prev_error)*50;
+
+			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset;
+			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset;
+
+			if (R_ctrl_signal >= 800) R_ctrl_signal = 800;
+			if (R_ctrl_signal <= -800) R_ctrl_signal = -800;
+
+			if (R_ctrl_signal == 0){
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+			}
+			else if (R_ctrl_signal > 0){
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, R_ctrl_signal);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+			}
+			else{
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, -R_ctrl_signal);
+			}
+//			Left
+			L_error = L_count_target - L_prev_enc_count;
+			L_ctrl_signal = L_Kpt*L_error + L_Kdt*(L_error-L_prev_error)*50;
+			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
+			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset;
+
+			if (L_ctrl_signal>=800) L_ctrl_signal = 800;
+			if (L_ctrl_signal<=-800) L_ctrl_signal = -800;
+
+			if (L_ctrl_signal == 0){
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+			}
+			else if (L_ctrl_signal > 0){
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, L_ctrl_signal);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+			}
+			else{
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
+			}
+
+			if (L_error <= Enc_Str_Error && L_error >= -Enc_Str_Error  && L_error == L_prev_error) {
+				if (R_error <= Enc_Str_Error && R_error >= -Enc_Str_Error  && R_error == R_prev_error) {
+					stp_cmplt=1;
+				}
+			}
+			L_prev_error = L_error;
+			R_prev_error = R_error;
+
 		}
 	}
 }

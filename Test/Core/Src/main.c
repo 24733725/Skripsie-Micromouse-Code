@@ -153,6 +153,7 @@ int main(void)
 	HAL_Delay(1000);
 	explore();
 	go_home();
+	race();
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint32_t prev_main_loop_time = HAL_GetTick();
 

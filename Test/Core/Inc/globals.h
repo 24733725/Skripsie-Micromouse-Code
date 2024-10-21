@@ -30,6 +30,7 @@
 #define R_Kff 0.5
 #define R_ff_offset 125
 
+#define Enc_Str_Error 2
 //turning
 #define L_Kpt 17
 #define R_Kpt 16
@@ -57,25 +58,42 @@
 
 #define COUNTS_PER_CELL 208
 
+#define MAX_PATH_LENGTH 256
+#define MAX_PATHS 16
+
 typedef struct {
 	uint8_t walls;  // binary - 0000 1111 last 1st bit: explored y/n and 4 bits:walls from top clockwise
 	uint8_t dist;
 }Cell;
 typedef enum {
-	NORTH = 0,
-	EAST = 1,
-	SOUTH = 2,
-	WEST = 3,
+    NORTH = 0,
+    NE = 1,
+    EAST = 2,
+    SE = 3,
+    SOUTH = 4,
+    SW = 5,
+    WEST = 6,
+    NW = 7,
 } Direction;
 typedef enum {
-	STRAIGHT = 0,
-	RIGHT = 1,
-	BACK = 2,
-	LEFT = 3,
+    STRAIGHT = 0,
+    SR = 1,
+    RIGHT = 2,
+    RB = 3,
+    BACK = 4,
+    LB = 5,
+    LEFT = 6,
+    SL = 7,
 } Relative_Direction;
 typedef struct {
     uint8_t heading;
     uint8_t current_cell_x;
     uint8_t current_cell_y;
 } MouseStruct;
+
+typedef struct {
+	uint8_t direction[MAX_PATH_LENGTH];
+	uint8_t distance[MAX_PATH_LENGTH];
+	uint8_t len;
+}Path;
 #endif /* INC_GLOBALS_H_ */

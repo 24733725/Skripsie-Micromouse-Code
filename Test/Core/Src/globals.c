@@ -32,10 +32,12 @@ uint8_t prev_measurements[3]; //L:M:R
 uint8_t target_x = END_CELL_X;
 uint8_t target_y = END_CELL_Y;
 
-Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
+Cell exp_maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
+Cell race_maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
 
 MouseStruct Mouse = {0, 0, 0};
 
+Path paths[MAX_PATHS];
 
 
 
