@@ -56,23 +56,29 @@ void maze_init(){
     add_wall(exp_maze, 0, 0, SOUTH);
     add_wall(exp_maze, 0, 0, WEST);
 	set_explored(exp_maze, 0, 0);
-//	print_maze();
-
-//    add_wall(0, 2, EAST);
-//    add_wall(0, 2, NORTH);
-//    add_wall(1, 3, EAST);
-//    add_wall(1, 3, SOUTH);
-//    add_wall(2, 3, WEST);
-//    add_wall(3, 3, WEST);
-//    add_wall(1, 0, NORTH);
-//    add_wall(3, 1, WEST);
-//    add_wall(2, 1, WEST);
-//    set_explored(0, 1);
-//    set_explored(1, 1);
-//    set_explored(2, 1);
-//    set_explored(3, 2);
+//	print_maze(exp_maze);
+// TEsting maze purposes:
+//    add_wall(exp_maze, 0, 2, EAST);
+//    add_wall(exp_maze, 0, 2, NORTH);
+//    add_wall(exp_maze, 1, 3, EAST);
+//    add_wall(exp_maze, 1, 3, SOUTH);
+//    add_wall(exp_maze, 2, 3, WEST);
+//    add_wall(exp_maze, 3, 3, WEST);
+//    add_wall(exp_maze, 1, 0, NORTH);
+//    add_wall(exp_maze, 3, 1, WEST);
+//    add_wall(exp_maze, 2, 1, WEST);
+//    set_explored(exp_maze, 0, 1);
+//    set_explored(exp_maze, 1, 1);
+//    set_explored(exp_maze, 2, 1);
+//    set_explored(exp_maze, 3, 2);
+//    set_explored(exp_maze, 2, 2);
+//    set_explored(exp_maze, 1, 2);
+//    set_explored(exp_maze, 4, 2);
+//    set_explored(exp_maze, 5, 2);
+//    set_explored(exp_maze, 5, 1);
+//    set_explored(exp_maze, 5, 0);
 //
-//    print_maze();
+//    print_maze(exp_maze);
 //    int t1 = HAL_GetTick();
     flood(exp_maze, END_CELL_X, END_CELL_Y);
 //    int t2 = HAL_GetTick();
@@ -86,13 +92,31 @@ void maze_init(){
 //
 	print_maze(exp_maze);
 //	save_maze();
-//
+//	race();
+}
+void printpath(Path p){
+	for (int i = 0; i < p.len; i++) {
+		sprintf(send_buffer, "%d ",(int)p.direction[i]);
+		uart_transmit(send_buffer, strlen(send_buffer));
+		HAL_Delay(1);
+	}
+	sprintf(send_buffer, "\n");
+	uart_transmit(send_buffer, strlen(send_buffer));
+	HAL_Delay(1);
+	for (int i = 0; i < p.len; i++) {
+		sprintf(send_buffer, "%d ",(int)p.distance[i]);
+		uart_transmit(send_buffer, strlen(send_buffer));
+		HAL_Delay(1);
+	}
+	sprintf(send_buffer, "\n\n");
+	uart_transmit(send_buffer, strlen(send_buffer));
+	HAL_Delay(1);
 }
 void print_maze(Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT]){
 	HAL_Delay(15);
 	for (int i = MAZE_CELL_HEIGHT-1; i>=0; i--) {
 		for (int j = 0; j < MAZE_CELL_WIDTH; j++) {
-			sprintf(send_buffer, "|%.2d",(int)maze[j][i].walls);
+			sprintf(send_buffer, "|%.3d",(int)maze[j][i].walls);
 			uart_transmit(send_buffer, strlen(send_buffer));
 			HAL_Delay(15);
 		}
@@ -154,11 +178,12 @@ void explore(){
 		HAL_Delay(100);
 
 		move(300,0);
-		save_maze(exp_maze);
+//		save_maze(exp_maze);
 //		print_maze();
 
 
 	}
+	set_explored(exp_maze, END_CELL_X, END_CELL_Y);
 	sprintf(send_buffer, "why\n");
 	uart_transmit(send_buffer, strlen(send_buffer));
 }
@@ -563,6 +588,7 @@ Path get_shortest_path(){
 	while (!(x==END_CELL_X && y == END_CELL_Y)){
 		uint8_t p = dir_of_lowest(race_maze, x, y);
 		temp.direction[temp.len] = p;
+		temp.distance[temp.len] = 1;
 		temp.len++;
 		if (p == NORTH) y++;
 		else if (p == EAST) x++;
@@ -621,6 +647,8 @@ Path detect_diagonals(Path p){
 			temp.direction[temp.len] = diag[diag_len-1];
 			temp.distance[temp.len] = 1;
 			temp.len++;
+
+			j+= hcounts + 1;
 		}
 	}
 
@@ -634,12 +662,12 @@ Path compress_path(Path p){
 	while (i < p.len){
 		sum = p.distance[i];
 		uint8_t j = i+1;
-		while (j< p.len -1){
+		while (j< p.len){
 			if (p.direction[j] == p.direction[j - 1]){
 				sum += p.distance[j];
+				j++;
 			}
 			else break;
-			j++;
 		}
 		temp.direction[temp.len] = p.direction[i];
 		temp.distance[temp.len] = sum;
@@ -660,13 +688,30 @@ void race(){
 	reverse(-150);
 
 	init_race_maze();
+	print_maze(race_maze);
 	paths[0] = get_shortest_path();
+	printpath(paths[0]);
 	paths[0] = detect_diagonals(paths[0]);
+	printpath(paths[0]);
 	paths[0] = compress_path(paths[0]);
-
+	printpath(paths[0]);
+	sprintf(send_buffer, "%d\n\n", score_path(paths[0]));
+	uart_transmit(send_buffer, strlen(send_buffer));
+	HAL_Delay(1);
 	for (int i = 0; i<paths[0].len; i++){
-		turn_to_direction(paths[0].direction[i]);
-		race_forward(paths[0].distance[i]);
+		uint8_t dir = paths[0].direction[i];
+		turn_to_direction(dir);
+		HAL_Delay(200);
+		uint16_t mm = 0;
+		if ((dir == 1)||(dir == 3)||(dir == 5)||(dir == 7)){
+			mm = (int)((paths[0].distance[i]*COUNTS_PER_CELL*1.4142)/2);
+		}
+		else {
+			mm = (int)((paths[0].distance[i]*COUNTS_PER_CELL)/2);
+		}
+		if (i==1) mm+=30;
+		race_forward(mm);
+		HAL_Delay(200);
 	}
 }
 

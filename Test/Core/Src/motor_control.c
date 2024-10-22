@@ -518,30 +518,38 @@ void smooth_stop(uint16_t dist){
 		}
 	}
 }
-void race_forward(uint8_t hcounts){
+void race_forward(uint16_t mm){
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 //	int16_t diff = R_acc - L_acc;
-	int16_t L_count_target = hcounts*COUNTS_PER_CELL;
-	int16_t R_count_target = hcounts*COUNTS_PER_CELL;
+	int16_t L_count_target = (int)mm*1.15749;
+	int16_t R_count_target = (int)mm*1.15749;
 	int16_t L_prev_error = L_count_target;
 	int16_t R_prev_error = R_count_target;
 
+	int16_t R_counts[1024];
+	int16_t L_counts[1024];
+	for (int i = 0; i < 1024; i++) {
+		R_counts[i]=0;
+		L_counts[i]=0;
+	}
+
 	reset_counts();
 	uint8_t stp_cmplt = 0;
+	int16_t j = 0;
 	while(stp_cmplt == 0){
-		if (HAL_GetTick() - prev_ctr_loop_time > TURN_CONTROL_LOOP_PERIOD_MS-1){
+		if (HAL_GetTick() - prev_ctr_loop_time > RACE_CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
 			R_prev_enc_count = htim3.Instance->CNT;
 			L_prev_enc_count = htim5.Instance->CNT;
 //			Right
 			R_error = R_count_target - R_prev_enc_count;
-			R_ctrl_signal = R_Kpt*R_error + R_Kdt*(R_error-R_prev_error)*50;
+			R_ctrl_signal = R_KpR*R_error + R_KdR*(R_error-R_prev_error)*(1000/RACE_CONTROL_LOOP_PERIOD_MS);
 
-			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset;
-			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset;
+			if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset_R;
+			if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset_R;
 
-			if (R_ctrl_signal >= 800) R_ctrl_signal = 800;
-			if (R_ctrl_signal <= -800) R_ctrl_signal = -800;
+			if (R_ctrl_signal >= MAX_POWER) R_ctrl_signal = MAX_POWER;
+			if (R_ctrl_signal <= -MAX_POWER) R_ctrl_signal = -MAX_POWER;
 
 			if (R_ctrl_signal == 0){
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
@@ -557,12 +565,12 @@ void race_forward(uint8_t hcounts){
 			}
 //			Left
 			L_error = L_count_target - L_prev_enc_count;
-			L_ctrl_signal = L_Kpt*L_error + L_Kdt*(L_error-L_prev_error)*50;
-			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
-			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset;
+			L_ctrl_signal = L_KpR*L_error + L_KdR*(L_error-L_prev_error)*(1000/RACE_CONTROL_LOOP_PERIOD_MS);
+			if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset_R;
+			if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset_R;
 
-			if (L_ctrl_signal>=800) L_ctrl_signal = 800;
-			if (L_ctrl_signal<=-800) L_ctrl_signal = -800;
+			if (L_ctrl_signal>=MAX_POWER) L_ctrl_signal = MAX_POWER;
+			if (L_ctrl_signal<=-MAX_POWER) L_ctrl_signal = -MAX_POWER;
 
 			if (L_ctrl_signal == 0){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
@@ -584,7 +592,23 @@ void race_forward(uint8_t hcounts){
 			}
 			L_prev_error = L_error;
 			R_prev_error = R_error;
-
+			R_counts[j] = R_prev_enc_count;
+			L_counts[j] = L_prev_enc_count;
+			if (j<1024) j++;
 		}
 	}
+	HAL_Delay(1000);
+	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(100);
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);}
+
+	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
+	uint32_t Laddress = 0x08020000;
+	uint32_t Raddress = 0x08021000;
+	for (int i = 0; i<1024; i++){
+		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Laddress+2*i, L_counts[i]);
+		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_counts[i]);
+		HAL_Delay(1);
+	}
+	HAL_FLASH_Lock();
+	reset_counts();
 }

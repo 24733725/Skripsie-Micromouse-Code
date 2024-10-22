@@ -22,6 +22,6 @@ void reset_counts();
 //void smooth_stop(uint16_t ms);
 //void smooth_stop1(uint16_t ms);
 void smooth_stop(uint16_t dist);
-void race_forward(uint8_t hcounts);
+void race_forward(uint16_t mm);
 
 #endif /* INC_MOTOR_CONTROL_H_ */
