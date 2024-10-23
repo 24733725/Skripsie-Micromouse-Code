@@ -10,7 +10,7 @@
 
 #include "inttypes.h"
 
-#define STR_CONTROL_LOOP_PERIOD_MS 20
+#define STR_CONTROL_LOOP_PERIOD_MS 10
 #define TURN_CONTROL_LOOP_PERIOD_MS 10
 #define RACE_CONTROL_LOOP_PERIOD_MS 5
 #define COUNTS_PER_ROTATION 120
@@ -21,13 +21,13 @@
 //straight line
 #define L_Kp 50
 //#define L_Kd 0.01
-#define L_Ki 1
+#define L_Ki 0.5
 #define L_Kff 0.475
 #define L_ff_offset 125
 
 #define R_Kp 50
 //#define R_Kd 0.01
-#define R_Ki 1
+#define R_Ki 0.5
 #define R_Kff 0.5
 #define R_ff_offset 125
 
@@ -50,15 +50,15 @@
 #define K_kick 22
 
 //RACE
-#define Enc_Str_Error 2
+#define Enc_Str_Error 1
 #define L_KpR 20
 #define R_KpR 20
 #define L_KdR 1.5
 #define R_KdR 1.5
-#define MAX_POWER 300
+#define MAX_POWER 350
 #define R_ff_offset_R 125
 #define L_ff_offset_R 125
-#define Ke 3
+#define Ke 8
 #define K_kickR 12
 
 #define TOF_ADDRESS 0x29<<1

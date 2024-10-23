@@ -8,4 +8,4 @@
 ../Core/Src/motor_control.c:117:6:reverse	16	static
 ../Core/Src/motor_control.c:447:6:smooth_stop	48	static
 ../Core/Src/motor_control.c:81:6:move	32	static
-../Core/Src/motor_control.c:521:6:race_forward	64	static
+../Core/Src/motor_control.c:521:6:race_forward	4160	static

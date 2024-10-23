@@ -145,8 +145,18 @@ int main(void)
 //	HAL_ADC_Start(&hadc1);
 	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(10);}
 
-//	HAL_Delay(500);
-//	race_forward(635);
+	HAL_Delay(500);
+//	int last_time = HAL_GetTick();
+//
+//	  while (1)
+//	  {
+//		  if (HAL_GetTick()- last_time > 9){
+//			  last_time = HAL_GetTick();
+//			  sprintf(send_buffer, "%d:%d:%d\n", measurements[0],measurements[1],measurements[2]);
+//			  uart_transmit(send_buffer, strlen(send_buffer));
+//		  }
+//	  }
+	race_forward(900);
 	R_speed_setpoint = 0;
 	L_speed_setpoint = 0;
 	while(measurements[1]>100) HAL_Delay(100);
@@ -154,7 +164,7 @@ int main(void)
 	HAL_Delay(1000);
 //	explore();
 //	go_home();
-	race();
+//	race();
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint32_t prev_main_loop_time = HAL_GetTick();
 
@@ -681,7 +691,7 @@ static void MX_TIM11_Init(void)
   htim11.Instance = TIM11;
   htim11.Init.Prescaler = 24;
   htim11.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim11.Init.Period = 10000;
+  htim11.Init.Period = 7500;
   htim11.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim11.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim11) != HAL_OK)

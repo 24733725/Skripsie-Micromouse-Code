@@ -542,7 +542,7 @@ void race_forward(uint16_t mm){
 	}
 	else wall_dist = 50;
 	int16_t j = 0;
-	while(stp_cmplt == 0){
+	while(stp_cmplt != 5){
 		if (HAL_GetTick() - prev_ctr_loop_time > RACE_CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
 			if (measurements[0]<wall_dist) {
@@ -601,10 +601,11 @@ void race_forward(uint16_t mm){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}
 
-			if (L_error <= Enc_Str_Error && L_error >= -Enc_Str_Error  && L_error == L_prev_error) {
-				if (R_error <= Enc_Str_Error && R_error >= -Enc_Str_Error  && R_error == R_prev_error) {
-					stp_cmplt=1;
+			if (abs(L_error) <= Enc_Str_Error && abs(L_error-L_prev_error)<1) {
+				if (abs(R_error) <= Enc_Str_Error  && abs(R_error-R_prev_error)<1) {
+					stp_cmplt++;
 				}
+				else stp_cmplt = 0;
 			}
 			L_prev_error = L_error;
 			R_prev_error = R_error;
@@ -613,18 +614,19 @@ void race_forward(uint16_t mm){
 			if (j<1024) j++;
 		}
 	}
-//	HAL_Delay(1000);
-//	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(100);
-//	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);}
-//
-//	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
-//	uint32_t Laddress = 0x08020000;
-//	uint32_t Raddress = 0x08021000;
-//	for (int i = 0; i<1024; i++){
-//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Laddress+2*i, L_counts[i]);
-//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_counts[i]);
-//		HAL_Delay(1);
-//	}
-//	HAL_FLASH_Lock();
 	reset_counts();
+
+	HAL_Delay(1000);
+	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(100);
+	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);}
+
+	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
+	uint32_t Laddress = 0x08020000;
+	uint32_t Raddress = 0x08021000;
+	for (int i = 0; i<1024; i++){
+		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Laddress+2*i, L_counts[i]);
+		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_counts[i]);
+		HAL_Delay(1);
+	}
+	HAL_FLASH_Lock();
 }
