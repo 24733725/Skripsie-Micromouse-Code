@@ -77,14 +77,25 @@ void maze_init(){
 //    set_explored(exp_maze, 5, 2);
 //    set_explored(exp_maze, 5, 1);
 //    set_explored(exp_maze, 5, 0);
-//
+	uint8_t dummy[6][6] = {
+			{0x09, 0x01, 0x01, 0x05, 0x05, 0x03},
+			{0x08, 0x06, 0xF8, 0xF5, 0xF3, 0x0A},
+			{0x0C, 0xF1, 0xF6, 0xF9, 0xF0, 0xF2},
+			{0xF9, 0xF4, 0xF7, 0xFA, 0xFE, 0xFE},
+			{0xF8, 0xF1, 0xF3, 0xFC, 0xF5, 0xF3},
+			{0xFE, 0x0C, 0xF4, 0xF5, 0xF7, 0xFE}};
+	for (int y = 0; y<6; y++) {
+		for (int x = 0; x < 6; x++) {
+			exp_maze[x][y].walls = dummy[5-y][x];
+		}
+	}
+
 //    print_maze(exp_maze);
 //    int t1 = HAL_GetTick();
     flood(exp_maze, END_CELL_X, END_CELL_Y);
 //    int t2 = HAL_GetTick();
 //
-//	sprintf(send_buffer, "%d\n",t1);
-//	uart_transmit(send_buffer, strlen(send_buffer));
+
 //	HAL_Delay(15);
 //	sprintf(send_buffer, "%d\n",t2);
 //	uart_transmit(send_buffer, strlen(send_buffer));
@@ -178,7 +189,7 @@ void explore(){
 		HAL_Delay(100);
 
 		move(300,0);
-//		save_maze(exp_maze);
+		save_maze(exp_maze);
 //		print_maze();
 
 
@@ -204,11 +215,11 @@ void go_home(){
 		move(300,0);
 		save_maze(exp_maze);
 //		print_maze();
-
-
 	}
-	sprintf(send_buffer, "why\n");
+	sprintf(send_buffer, "home\n");
 	uart_transmit(send_buffer, strlen(send_buffer));
+	turn(180);
+	reverse(-150);
 }
 void update(){
 	static uint8_t L_open_count = 0;
@@ -243,10 +254,10 @@ void update(){
 			}
 		}
 		//set L and R walls
-		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 200){
+		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 180){
 			L_open_count = 1;
 		}
-		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 200){
+		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 180){
 			R_open_count = 1;
 		}
 		break;
@@ -286,10 +297,10 @@ void update(){
 			}
 		}
 		//set L and R walls
-		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 200){
+		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 180){
 			L_open_count = 1;
 		}
-		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 200){
+		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 180){
 			R_open_count = 1;
 		}
 		break;
@@ -329,10 +340,10 @@ void update(){
 			}
 		}
 		//set L and R walls
-		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 200){
+		if ((measurements[0]- prev_measurements[0]>50)&& measurements[0] > 180){
 			L_open_count = 1;
 		}
-		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 200){
+		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 180){
 			R_open_count = 1;
 		}
 		break;
@@ -374,10 +385,10 @@ void update(){
 			}
 		}
 		//set L and R walls
-		if ((measurements[0] - prev_measurements[0]>50)&& measurements[0] > 200){
+		if ((measurements[0] - prev_measurements[0]>50)&& measurements[0] > 180){
 			L_open_count = 1;
 		}
-		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 200){
+		if ((measurements[2] - prev_measurements[2]>50) && measurements[2] > 180){
 			R_open_count = 1;
 		}
 		break;
@@ -425,7 +436,7 @@ void dlog(){
 	address += 0x10;
 }
 Direction rel_to_fixed_dir(Relative_Direction mouse_dir){
-	return ((Mouse.heading)+ mouse_dir + 8)%8;
+	return (Mouse.heading+ mouse_dir + 8)%8;
 }
 void rem_wall(Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT], uint8_t x, uint8_t y, uint8_t dir) {
     if ((maze[x][y].walls & 0xF0) == 0) {
@@ -684,9 +695,6 @@ uint16_t score_path(Path p){
 	return score;
 }
 void race(){
-	turn(180);
-	reverse(-150);
-
 	init_race_maze();
 	print_maze(race_maze);
 	paths[0] = get_shortest_path();
@@ -701,17 +709,21 @@ void race(){
 	for (int i = 0; i<paths[0].len; i++){
 		uint8_t dir = paths[0].direction[i];
 		turn_to_direction(dir);
-		HAL_Delay(200);
+		HAL_Delay(100);
 		uint16_t mm = 0;
 		if ((dir == 1)||(dir == 3)||(dir == 5)||(dir == 7)){
-			mm = (int)((paths[0].distance[i]*COUNTS_PER_CELL*1.4142)/2);
+			mm = (int)(((paths[0].distance[i])*104*1.4142))-20;
 		}
 		else {
-			mm = (int)((paths[0].distance[i]*COUNTS_PER_CELL)/2);
+			mm = (int)((paths[0].distance[i]*104));
 		}
-		if (i==1) mm+=30;
+		if (i==0) mm-=10;
+		else if (paths[0].distance[i] != 1) mm-= 60;
+
+		sprintf(send_buffer, "%d\n\n", mm);
+		uart_transmit(send_buffer, strlen(send_buffer));
 		race_forward(mm);
-		HAL_Delay(200);
+		HAL_Delay(100);
 	}
 }
 

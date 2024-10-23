@@ -145,8 +145,8 @@ int main(void)
 //	HAL_ADC_Start(&hadc1);
 	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(10);}
 
-	HAL_Delay(3000);
-	race_forward(900);
+//	HAL_Delay(500);
+//	race_forward(635);
 	R_speed_setpoint = 0;
 	L_speed_setpoint = 0;
 	while(measurements[1]>100) HAL_Delay(100);
@@ -154,7 +154,7 @@ int main(void)
 	HAL_Delay(1000);
 //	explore();
 //	go_home();
-//	race();
+	race();
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint32_t prev_main_loop_time = HAL_GetTick();
 

@@ -110,7 +110,7 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			kickR = 0;
 		}
 	}
-	smooth_stop(50);
+	smooth_stop(40);
 
 	reset_counts();
 }
@@ -135,8 +135,8 @@ void reverse(int16_t velocity){ // velocity in mm/s, omega in deg/s
 }
 void turn(int16_t deg){
 	reset_counts();
-	int16_t L_count_target = (int)((WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0));
-	int16_t R_count_target = (int)(-(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0));
+	int16_t L_count_target = (int)(( (WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0))+ abs(deg)/deg);
+	int16_t R_count_target = (int)((-(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0))+ abs(deg)/deg);
 	int16_t L_prev_error = L_count_target;
 	int16_t R_prev_error = R_count_target;
 
@@ -532,13 +532,27 @@ void race_forward(uint16_t mm){
 		R_counts[i]=0;
 		L_counts[i]=0;
 	}
-
+	int8_t kickL = 0;
+	int8_t kickR = 0;
 	reset_counts();
 	uint8_t stp_cmplt = 0;
+	uint8_t wall_dist = 0;
+	if ((Mouse.heading == 1)||(Mouse.heading == 3)||(Mouse.heading == 5)||(Mouse.heading == 7)){
+		wall_dist = 35;
+	}
+	else wall_dist = 50;
 	int16_t j = 0;
 	while(stp_cmplt == 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > RACE_CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
+			if (measurements[0]<wall_dist) {
+				kickR = -1;
+				kickL = 1;
+			}
+			else if (measurements[2]<wall_dist){
+				kickR = 1;
+				kickL = -1;
+			}
 			R_prev_enc_count = htim3.Instance->CNT;
 			L_prev_enc_count = htim5.Instance->CNT;
 //			Right
@@ -550,7 +564,7 @@ void race_forward(uint16_t mm){
 
 			if (R_ctrl_signal >= MAX_POWER) R_ctrl_signal = MAX_POWER;
 			if (R_ctrl_signal <= -MAX_POWER) R_ctrl_signal = -MAX_POWER;
-
+			L_ctrl_signal += K_kickR*kickR + Ke*(L_prev_enc_count-R_prev_enc_count);
 			if (R_ctrl_signal == 0){
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
@@ -571,6 +585,8 @@ void race_forward(uint16_t mm){
 
 			if (L_ctrl_signal>=MAX_POWER) L_ctrl_signal = MAX_POWER;
 			if (L_ctrl_signal<=-MAX_POWER) L_ctrl_signal = -MAX_POWER;
+
+			L_ctrl_signal += K_kickR*kickL + Ke*(R_prev_enc_count-L_prev_enc_count);
 
 			if (L_ctrl_signal == 0){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
@@ -597,18 +613,18 @@ void race_forward(uint16_t mm){
 			if (j<1024) j++;
 		}
 	}
-	HAL_Delay(1000);
-	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(100);
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);}
-
-	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
-	uint32_t Laddress = 0x08020000;
-	uint32_t Raddress = 0x08021000;
-	for (int i = 0; i<1024; i++){
-		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Laddress+2*i, L_counts[i]);
-		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_counts[i]);
-		HAL_Delay(1);
-	}
-	HAL_FLASH_Lock();
+//	HAL_Delay(1000);
+//	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(100);
+//	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);}
+//
+//	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
+//	uint32_t Laddress = 0x08020000;
+//	uint32_t Raddress = 0x08021000;
+//	for (int i = 0; i<1024; i++){
+//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Laddress+2*i, L_counts[i]);
+//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_counts[i]);
+//		HAL_Delay(1);
+//	}
+//	HAL_FLASH_Lock();
 	reset_counts();
 }
