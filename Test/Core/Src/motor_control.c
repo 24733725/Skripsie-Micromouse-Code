@@ -36,6 +36,7 @@ extern int32_t Dist_error_acc;
 extern Cell exp_maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
 extern MouseStruct Mouse;
 extern uint8_t measurements[3]; //L:M:R
+extern uint8_t prev_measurements[3]; //L:M:R
 extern char send_buffer[64];
 void motorsInit(){
 	  //Motor 1
@@ -91,18 +92,20 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
 
-			if (measurements[0]<60) {
+			if (measurements[0]<50) {
 				kickR = -1;
 				kickL = 1;
 			}
-			else if (measurements[2]<60){
+			else if (measurements[2]<50){
 				kickR = 1;
 				kickL = -1;
 			}
+			R_prev_enc_count = htim3.Instance->CNT;
+			L_prev_enc_count = htim5.Instance->CNT;
 			R_motor_feedback_control(kickR);
 			L_motor_feedback_control(kickL);
 			update();
-			dlog();
+//			dlog();
 //			sprintf(send_buffer, "L:%d R:%d x:%d y:%d\n",(int)L_acc,(int)R_acc, (int)Mouse.current_cell_x, (int)Mouse.current_cell_y );
 //			uart_transmit(send_buffer, strlen(send_buffer));
 
@@ -110,7 +113,28 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 			kickR = 0;
 		}
 	}
-	smooth_stop(40);
+	uint16_t ldist = 0;
+	uint16_t rdist = 0;
+	static uint8_t flag = 0;
+	if (measurements[1]<120) {
+		ldist = (int)((measurements[1]+prev_measurements[1])/2.0) - 65;
+		rdist = (int)((measurements[1]+prev_measurements[1])/2.0) - 65;
+	}
+	else if (flag == 0){
+		ldist = 23;
+		rdist = 23;
+		flag = 1;
+	}
+	else {
+		ldist = 35;
+		rdist = 35;
+	}
+
+//	if (read_wall(exp_maze, Mouse.current_cell_x, Mouse.current_cell_y, rel_to_fixed_dir(LEFT))){
+//		if (measurements[0]<120) {
+//		}
+//	}
+	smooth_stop(ldist, rdist);
 
 	reset_counts();
 }
@@ -119,7 +143,7 @@ void reverse(int16_t velocity){ // velocity in mm/s, omega in deg/s
 	R_speed_setpoint = velocity;//mm/s
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
-	uint8_t count = 30;
+	uint8_t count = 65;
 	while(count>0){
 		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
@@ -127,7 +151,7 @@ void reverse(int16_t velocity){ // velocity in mm/s, omega in deg/s
 			R_motor_feedback_control(0);
 			L_motor_feedback_control(0);
 			update();
-			dlog();
+//			dlog();
 			count--;
 		}
 	}
@@ -135,8 +159,8 @@ void reverse(int16_t velocity){ // velocity in mm/s, omega in deg/s
 }
 void turn(int16_t deg){
 	reset_counts();
-	int16_t L_count_target = (int)(( (WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0))+ abs(deg)/deg);
-	int16_t R_count_target = (int)((-(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0))+ abs(deg)/deg);
+	int16_t L_count_target = (int)( (WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0));//+ abs(deg)/deg);
+	int16_t R_count_target = (int)(-(WHEEL_SPACING_MM*deg*COUNTS_PER_ROTATION)/(WHEEL_DIAMETER_MM*360.0));//+ abs(deg)/deg);
 	int16_t L_prev_error = L_count_target;
 	int16_t R_prev_error = R_count_target;
 
@@ -201,10 +225,9 @@ void turn(int16_t deg){
 					turn_cmplt=1;
 				}
 			}
-
 			L_prev_error = L_error;
 			R_prev_error = R_error;
-			dlog();
+//			dlog();
 			max_loops--;
 			if (max_loops == 0) break;
 //			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
@@ -216,8 +239,8 @@ void turn(int16_t deg){
 	set_explored(exp_maze, Mouse.current_cell_x, Mouse.current_cell_y);
 	//need to take into account that after turn, mouse is in middle of cell
 	if (abs(deg) == 90){
-		R_acc = 50;
-		L_acc = 50;
+		R_acc = 40;
+		L_acc = 40;
 	}
 	if (abs(deg) == 180){
 		R_acc = 70;
@@ -265,7 +288,7 @@ void smooth_turn_L(){
 			if (abs(R_error) <= Enc_Turn_Error && abs(R_prev_error) <= Enc_Turn_Error) turn_cmplt=1;
 
 			R_prev_error = R_error;
-			dlog();
+//			dlog();
 			max_loops--;
 			if (max_loops == 0) break;
 //			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
@@ -318,7 +341,7 @@ void smooth_turn_R(){
 			if (abs(L_error) <= Enc_Turn_Error && abs(L_prev_error) <= Enc_Turn_Error) turn_cmplt=1;
 			L_prev_error = L_error;
 
-			dlog();
+//			dlog();
 			max_loops--;
 			if (max_loops == 0) break;
 //			sprintf(send_buffer, "L:%d R:%d LT:%d RT:%d\n",(int)L_prev_enc_count,(int)R_prev_enc_count, (int)L_count_target , (int)R_count_target);
@@ -333,7 +356,7 @@ void smooth_turn_R(){
 	L_acc = 50;
 }
 void R_motor_feedback_control(int8_t kick){//speed in mm/s
-	R_prev_enc_count = htim3.Instance->CNT;
+
 	R_acc += R_prev_enc_count;
 
 	//error in encoder count for that ctrl period
@@ -344,9 +367,12 @@ void R_motor_feedback_control(int8_t kick){//speed in mm/s
 	if(R_acc_error < -1000) R_acc_error = -1000;  //limits integral term
 
 //					Proportional  		Integral		  FeedForward 				proportional distance error   integral distance error
-	R_ctrl_signal = R_Kp*R_error + R_Ki*R_acc_error + R_Kff*R_speed_setpoint + K_kick*kick;// + K_pdisterror*(L_acc-R_acc) + K_idisterror*Dist_error_acc;
-	if (R_speed_setpoint > 0) R_ctrl_signal += R_ff_offset;
-	if (R_speed_setpoint < 0) R_ctrl_signal -= R_ff_offset;
+	R_ctrl_signal = R_Kp*R_error + R_Ki*R_acc_error + R_Kff*R_speed_setpoint + K_kick*kick;// + K_pdisterror*(L_prev_enc_count-R_prev_enc_count); + K_idisterror*Dist_error_acc;
+
+	if (kick==0) R_ctrl_signal += K_pdisterror*(L_prev_enc_count-R_prev_enc_count);
+
+	if (R_ctrl_signal > 0) R_ctrl_signal += R_ff_offset;
+	if (R_ctrl_signal < 0) R_ctrl_signal -= R_ff_offset;
 
 	if (R_ctrl_signal >= 1000) R_ctrl_signal = 999;
 	if (R_ctrl_signal <= -1000) R_ctrl_signal = -999;
@@ -370,7 +396,6 @@ void R_motor_feedback_control(int8_t kick){//speed in mm/s
 }
 
 void L_motor_feedback_control(int8_t kick){//speed in mm/s
-	L_prev_enc_count = htim5.Instance->CNT;
 	L_acc += L_prev_enc_count;
 	//error in encoder count for that ctrl period
 	L_error = (int)((L_speed_setpoint*COUNTS_PER_ROTATION*STR_CONTROL_LOOP_PERIOD_MS)/(WHEEL_DIAMETER_MM*PI*1000)) - L_prev_enc_count;
@@ -380,9 +405,12 @@ void L_motor_feedback_control(int8_t kick){//speed in mm/s
 	if(L_acc_error < -1000) L_acc_error = -1000;  //limits integral term
 
 //					Proportional  		Integral		  FeedForward
-	L_ctrl_signal = L_Kp*L_error + L_Ki*L_acc_error + L_Kff*L_speed_setpoint + K_kick*kick;//K_pdisterror*(R_acc-L_acc) - K_idisterror*Dist_error_acc;
-	if (L_speed_setpoint > 0) L_ctrl_signal += L_ff_offset;
-	if (L_speed_setpoint < 0) L_ctrl_signal -= L_ff_offset;
+	L_ctrl_signal = L_Kp*L_error + L_Ki*L_acc_error + L_Kff*L_speed_setpoint + K_kick*kick;// + K_pdisterror*(R_prev_enc_count-L_prev_enc_count) - K_idisterror*Dist_error_acc;
+
+	if (kick==0) L_ctrl_signal += K_pdisterror*(R_prev_enc_count-L_prev_enc_count);
+
+	if (L_ctrl_signal > 0) L_ctrl_signal += L_ff_offset;
+	if (L_ctrl_signal < 0) L_ctrl_signal -= L_ff_offset;
 
 
 	if (L_ctrl_signal>1000) L_ctrl_signal = 999;
@@ -444,12 +472,12 @@ void L_motor_feedback_control(int8_t kick){//speed in mm/s
 //	}
 //	reset_counts();
 //}
-void smooth_stop(uint16_t dist){
+void smooth_stop(uint16_t ldist, uint16_t rdist){
 
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 //	int16_t diff = R_acc - L_acc;
-	int16_t L_count_target = dist;
-	int16_t R_count_target = dist;
+	int16_t L_count_target = (int)(ldist*1.15749);
+	int16_t R_count_target = (int)(rdist*1.15749);
 	int16_t L_prev_error = L_count_target;
 	int16_t R_prev_error = R_count_target;
 
@@ -512,7 +540,7 @@ void smooth_stop(uint16_t dist){
 			}
 			L_prev_error = L_error;
 			R_prev_error = R_error;
-			dlog();
+//			dlog();
 			max_loops--;
 			if (max_loops == 0) break;
 		}
@@ -521,28 +549,28 @@ void smooth_stop(uint16_t dist){
 void race_forward(uint16_t mm){
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 //	int16_t diff = R_acc - L_acc;
-	int16_t L_count_target = (int)mm*1.15749;
-	int16_t R_count_target = (int)mm*1.15749;
+	int16_t L_count_target = (int)(mm*1.15749);
+	int16_t R_count_target = (int)(mm*1.15749);
 	int16_t L_prev_error = L_count_target;
 	int16_t R_prev_error = R_count_target;
 
-	int16_t R_counts[1024];
-	int16_t L_counts[1024];
-	for (int i = 0; i < 1024; i++) {
-		R_counts[i]=0;
-		L_counts[i]=0;
-	}
+//	int16_t R_counts[1024];
+//	int16_t L_counts[1024];
+//	for (int i = 0; i < 1024; i++) {
+//		R_counts[i]=0;
+//		L_counts[i]=0;
+//	}
+//	int16_t j = 0;
 	int8_t kickL = 0;
 	int8_t kickR = 0;
 	reset_counts();
 	uint8_t stp_cmplt = 0;
 	uint8_t wall_dist = 0;
 	if ((Mouse.heading == 1)||(Mouse.heading == 3)||(Mouse.heading == 5)||(Mouse.heading == 7)){
-		wall_dist = 35;
+		wall_dist = 30;
 	}
 	else wall_dist = 50;
-	int16_t j = 0;
-	while(stp_cmplt != 5){
+	while(stp_cmplt == 0){
 		if (HAL_GetTick() - prev_ctr_loop_time > RACE_CONTROL_LOOP_PERIOD_MS-1){
 			prev_ctr_loop_time = HAL_GetTick();
 			if (measurements[0]<wall_dist) {
@@ -564,7 +592,7 @@ void race_forward(uint16_t mm){
 
 			if (R_ctrl_signal >= MAX_POWER) R_ctrl_signal = MAX_POWER;
 			if (R_ctrl_signal <= -MAX_POWER) R_ctrl_signal = -MAX_POWER;
-			L_ctrl_signal += K_kickR*kickR + Ke*(L_prev_enc_count-R_prev_enc_count);
+			R_ctrl_signal += K_kickR*kickR + KeR*(L_prev_enc_count-R_prev_enc_count);
 			if (R_ctrl_signal == 0){
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
 				__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
@@ -586,7 +614,7 @@ void race_forward(uint16_t mm){
 			if (L_ctrl_signal>=MAX_POWER) L_ctrl_signal = MAX_POWER;
 			if (L_ctrl_signal<=-MAX_POWER) L_ctrl_signal = -MAX_POWER;
 
-			L_ctrl_signal += K_kickR*kickL + Ke*(R_prev_enc_count-L_prev_enc_count);
+			L_ctrl_signal += K_kickR*kickL + KeR*(R_prev_enc_count-L_prev_enc_count);
 
 			if (L_ctrl_signal == 0){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
@@ -601,32 +629,106 @@ void race_forward(uint16_t mm){
 				__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
 			}
 
-			if (abs(L_error) <= Enc_Str_Error && abs(L_error-L_prev_error)<1) {
-				if (abs(R_error) <= Enc_Str_Error  && abs(R_error-R_prev_error)<1) {
-					stp_cmplt++;
+			if (L_error <= Enc_Str_Error && L_error >= -Enc_Str_Error  && L_error == L_prev_error) {
+				if (R_error <= Enc_Str_Error && R_error >= -Enc_Str_Error  && R_error == R_prev_error) {
+					stp_cmplt=1;
 				}
-				else stp_cmplt = 0;
 			}
 			L_prev_error = L_error;
 			R_prev_error = R_error;
-			R_counts[j] = R_prev_enc_count;
-			L_counts[j] = L_prev_enc_count;
-			if (j<1024) j++;
+//			R_counts[j] = R_prev_enc_count;
+//			L_counts[j] = L_prev_enc_count;
+//			if (j<1024) j++;
 		}
 	}
 	reset_counts();
 
-	HAL_Delay(1000);
-	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(100);
-	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);}
+//	HAL_Delay(1000);
+//	if (HAL_FLASH_Unlock() != HAL_OK) while(1){  HAL_Delay(100);
+//	HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);}
+//
+//	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
+//	uint32_t Laddress = 0x08020000;
+//	uint32_t Raddress = 0x08021000;
+//	for (int i = 0; i<1024; i++){
+//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Laddress+2*i, L_counts[i]);
+//		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_counts[i]);
+//		HAL_Delay(1);
+//	}
+//	HAL_FLASH_Lock();
+}
+void align(){
+	uint16_t r_dist = 67;
+	uint16_t l_dist = 60;
+	reset_counts();
+	uint32_t prev_ctr_loop_time = HAL_GetTick();
+	uint8_t count = 30;
+	while(count>0){
+		if (HAL_GetTick() - prev_ctr_loop_time > TURN_CONTROL_LOOP_PERIOD_MS-1){
+			prev_ctr_loop_time = HAL_GetTick();
+			if (measurements[0]<l_dist) {
+				R_ctrl_signal = -170;
+				if (R_ctrl_signal == 0){
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+				}
+				else if (R_ctrl_signal > 0){
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, R_ctrl_signal);
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+				}
+				else{
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, -R_ctrl_signal);
+				}
 
-	FLASH_Erase_Sector(FLASH_SECTOR_5, VOLTAGE_RANGE_3);
-	uint32_t Laddress = 0x08020000;
-	uint32_t Raddress = 0x08021000;
-	for (int i = 0; i<1024; i++){
-		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Laddress+2*i, L_counts[i]);
-		HAL_FLASH_Program(TYPEPROGRAM_HALFWORD, Raddress+2*i, R_counts[i]);
-		HAL_Delay(1);
+				L_ctrl_signal = 240;
+
+				if (L_ctrl_signal == 0){
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+				}
+				else if (L_ctrl_signal > 0){
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, L_ctrl_signal);
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+				}
+				else{
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
+				}
+			}
+			else if (measurements[2]<r_dist){
+				L_ctrl_signal = -170;
+
+				if (L_ctrl_signal == 0){
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+				}
+				else if (L_ctrl_signal > 0){
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, L_ctrl_signal);
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 0);
+				}
+				else{
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 0);
+					__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, -L_ctrl_signal);
+				}
+				R_ctrl_signal = 240;
+				if (R_ctrl_signal == 0){
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+				}
+				else if (R_ctrl_signal > 0){
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, R_ctrl_signal);
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, 0);
+				}
+				else{
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_2, 0);
+					__HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_3, -R_ctrl_signal);
+				}
+			}
+
+			count--;
+		}
 	}
-	HAL_FLASH_Lock();
+	reset_counts();
+
 }

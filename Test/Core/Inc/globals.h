@@ -30,7 +30,7 @@
 #define R_Ki 0.5
 #define R_Kff 0.5
 #define R_ff_offset 125
-
+#define K_pdisterror 10
 //turning
 #define L_Kpt 17
 #define R_Kpt 16
@@ -47,10 +47,10 @@
 #define R_Kdss 0.5
 #define Enc_SS_Error 1
 
-#define K_kick 22
+#define K_kick 24
 
 //RACE
-#define Enc_Str_Error 1
+#define Enc_Str_Error 2
 #define L_KpR 20
 #define R_KpR 20
 #define L_KdR 1.5
@@ -58,8 +58,8 @@
 #define MAX_POWER 350
 #define R_ff_offset_R 125
 #define L_ff_offset_R 125
-#define Ke 8
-#define K_kickR 12
+#define KeR 8
+#define K_kickR 40
 
 #define TOF_ADDRESS 0x29<<1
 
