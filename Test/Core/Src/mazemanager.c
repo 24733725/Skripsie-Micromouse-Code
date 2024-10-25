@@ -85,6 +85,7 @@ void maze_init(){
 //			{0xF9, 0xF4, 0xF7, 0xFA, 0xFE, 0xFE},
 //			{0xF8, 0xF1, 0xF3, 0xFC, 0xF5, 0xF3},
 //			{0xFE, 0x0C, 0xF4, 0xF5, 0xF7, 0xFE}};
+//
 //	for (int y = 0; y<6; y++) {
 //		for (int x = 0; x < 6; x++) {
 //			exp_maze[x][y].walls = dummy[5-y][x];
@@ -93,6 +94,8 @@ void maze_init(){
 
 //    print_maze(exp_maze);
 //    int t1 = HAL_GetTick();
+//		sprintf(send_buffer, "Init\n");
+//		uart_transmit(send_buffer, strlen(send_buffer));
     flood(exp_maze, END_CELL_X, END_CELL_Y);
 //    int t2 = HAL_GetTick();
 //
@@ -102,7 +105,7 @@ void maze_init(){
 //	uart_transmit(send_buffer, strlen(send_buffer));
 //	HAL_Delay(15);
 //
-	print_maze(exp_maze);
+//	print_maze(exp_maze);
 //	save_maze();
 //	race();
 }
@@ -128,7 +131,7 @@ void print_maze(Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT]){
 	HAL_Delay(15);
 	for (int i = MAZE_CELL_HEIGHT-1; i>=0; i--) {
 		for (int j = 0; j < MAZE_CELL_WIDTH; j++) {
-			sprintf(send_buffer, "|%.3d",(int)maze[j][i].walls);
+			sprintf(send_buffer, "|%.2x",(int)maze[j][i].walls);
 			uart_transmit(send_buffer, strlen(send_buffer));
 			HAL_Delay(15);
 		}
@@ -515,9 +518,10 @@ void set_explored(Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT], uint8_t x, uint8
 }
 uint8_t get_explored(Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT], uint8_t x, uint8_t y) {
     if (x >= 0 && x < MAZE_CELL_WIDTH && y >= 0 && y < MAZE_CELL_HEIGHT) {
-        return (maze[x][y].walls & 0xF0) != 0;
+        if((maze[x][y].walls & 0xF0) == 0) return 0;
+        else return 1;
     }
-    return 1;
+    return 0;
 }
 uint8_t dir_of_lowest(Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT], uint8_t x, uint8_t y) {
 	uint8_t min = 255;
@@ -558,6 +562,7 @@ void flood(Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT], uint8_t ex, uint8_t ey)
         for (uint8_t x = 0; x < MAZE_CELL_WIDTH; x++) {
             for (uint8_t y = 0; y < MAZE_CELL_HEIGHT; y++) {
                 if (!(x == ex && y == ey)) {
+                	if (maze[x][y].walls == 0xF) continue;
                 	uint8_t min = MAZE_CELL_HEIGHT * MAZE_CELL_WIDTH -1;
                     if (read_wall(maze, x, y, NORTH) == 0) {
                         if (maze[x][y + 1].dist < min) {
@@ -605,15 +610,20 @@ void init_race_maze(){ //copy across to race maze, blocking off unexplored cells
 	for (int i = 0; i < MAZE_CELL_WIDTH; i++){
 		for (int j = 0; j < MAZE_CELL_HEIGHT; j++){
 			if (get_explored(exp_maze, i, j)==0){
-				race_maze[i][j].walls = 0xF;
+				add_wall(race_maze, i, j, NORTH);
+				add_wall(race_maze, i, j, SOUTH);
+				add_wall(race_maze, i, j, EAST);
+				add_wall(race_maze, i, j, WEST);
+//				sprintf(send_buffer, "blocked %d ,%d\n", i, j);
+//				uart_transmit(send_buffer, strlen(send_buffer));
+//				HAL_Delay(5);
 			}
-			else{
-				race_maze[i][j].walls = exp_maze[i][j].walls;
-			}
-			race_maze[i][j].dist = exp_maze[i][j].dist;
+			race_maze[i][j].walls |= exp_maze[i][j].walls & 0xF;
+
 		}
 	}
 	flood(race_maze, END_CELL_X, END_CELL_Y);
+//	print_maze(race_maze);
 }
 Path get_shortest_path(){
 	uint8_t x = 0;
@@ -721,8 +731,10 @@ uint16_t score_path(Path p){
 }
 void race(){
 	init_race_maze();
+//	sprintf(send_buffer, "Race\n");
+//	uart_transmit(send_buffer, strlen(send_buffer));
 //	print_maze(race_maze);
-	save_maze(race_maze);
+//	save_maze(race_maze);
 	paths[0] = get_shortest_path();
 //	printpath(paths[0]);
 	paths[0] = detect_diagonals(paths[0]);
