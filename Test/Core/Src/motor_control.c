@@ -34,6 +34,7 @@ extern int32_t R_acc;
 extern int32_t Dist_error_acc;
 
 extern Cell exp_maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
+extern Cell race_maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];
 extern MouseStruct Mouse;
 extern uint8_t measurements[3]; //L:M:R
 extern uint8_t prev_measurements[3]; //L:M:R
@@ -109,6 +110,61 @@ void move(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
 //			sprintf(send_buffer, "L:%d R:%d x:%d y:%d\n",(int)L_acc,(int)R_acc, (int)Mouse.current_cell_x, (int)Mouse.current_cell_y );
 //			uart_transmit(send_buffer, strlen(send_buffer));
 
+			kickL = 0;
+			kickR = 0;
+		}
+	}
+	uint16_t ldist = 0;
+	uint16_t rdist = 0;
+	static uint8_t flag = 0;
+	if (measurements[1]<120) {
+		ldist = (int)((measurements[1]+prev_measurements[1])/2.0) - 65;
+		rdist = (int)((measurements[1]+prev_measurements[1])/2.0) - 65;
+	}
+	else if (flag == 0){
+		ldist = 23;
+		rdist = 23;
+		flag = 1;
+	}
+	else {
+		ldist = 35;
+		rdist = 35;
+	}
+
+//	if (read_wall(exp_maze, Mouse.current_cell_x, Mouse.current_cell_y, rel_to_fixed_dir(LEFT))){
+//		if (measurements[0]<120) {
+//		}
+//	}
+	smooth_stop(ldist, rdist);
+
+	reset_counts();
+}
+void moveR(int16_t velocity, int16_t omega){ // velocity in mm/s, omega in deg/s
+	L_speed_setpoint = velocity + (int)((WHEEL_SPACING_MM*omega*PI)/(2.0*180)); //mm/s
+	R_speed_setpoint = velocity - (int)((WHEEL_SPACING_MM*omega*PI)/(2.0*180));//mm/s
+
+	int8_t kickL = 0;
+	int8_t kickR = 0;
+
+	uint32_t prev_ctr_loop_time = HAL_GetTick();
+
+	while(measurements[1]>70 && (velocity != 0) && (dir_of_lowest(race_maze, Mouse.current_cell_x, Mouse.current_cell_y)==rel_to_fixed_dir(STRAIGHT))){
+		if (HAL_GetTick() - prev_ctr_loop_time > STR_CONTROL_LOOP_PERIOD_MS-1){
+			prev_ctr_loop_time = HAL_GetTick();
+
+			if (measurements[0]<50) {
+				kickR = -1;
+				kickL = 1;
+			}
+			else if (measurements[2]<50){
+				kickR = 1;
+				kickL = -1;
+			}
+			R_prev_enc_count = htim3.Instance->CNT;
+			L_prev_enc_count = htim5.Instance->CNT;
+			R_motor_feedback_control(kickR);
+			L_motor_feedback_control(kickL);
+			update();
 			kickL = 0;
 			kickR = 0;
 		}

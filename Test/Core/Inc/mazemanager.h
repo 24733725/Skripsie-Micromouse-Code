@@ -15,6 +15,7 @@ void maze_init();
 void explore();
 void go_home();
 void race();
+void race_man();
 void update();
 void save_maze(Cell maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT]);
 void dlog();

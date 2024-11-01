@@ -12,6 +12,7 @@
 
 void motorsInit();
 void move(int16_t velocity, int16_t omega);
+void moveR(int16_t velocity, int16_t omega);
 void reverse(int16_t velocity);
 void smooth_turn_L();
 void smooth_turn_R();

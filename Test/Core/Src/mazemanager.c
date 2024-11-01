@@ -188,12 +188,12 @@ void explore(){
 		if (measurements[1]<20) break;
 		flood(exp_maze,target_x, target_y);
 
-		HAL_Delay(100);
+		HAL_Delay(10);
 
 		turn_to_direction(dir_of_lowest(exp_maze, Mouse.current_cell_x,Mouse.current_cell_y));
-		HAL_Delay(100);
+		HAL_Delay(10);
 
-		move(300,0);
+		move(300, 0);
 //		save_maze(exp_maze);
 //		print_maze();
 
@@ -207,15 +207,15 @@ void go_home(){
 	target_x = 0;
 	target_y = 0;
 	flood(exp_maze, target_x, target_y);
-	HAL_Delay(500);
+	HAL_Delay(50);
 	while(!((Mouse.current_cell_x == target_x) && (Mouse.current_cell_y == target_y))){
 		if (measurements[1]<20) break;
 		flood(exp_maze, target_x, target_y);
 
-		HAL_Delay(100);
+		HAL_Delay(10);
 
 		turn_to_direction(dir_of_lowest(exp_maze, Mouse.current_cell_x,Mouse.current_cell_y));
-		HAL_Delay(100);
+		HAL_Delay(10);
 
 		move(300,0);
 //		save_maze(exp_maze);
@@ -748,7 +748,7 @@ void race(){
 	for (int i = 0; i<paths[0].len; i++){
 		uint8_t dir = paths[0].direction[i];
 		turn_to_direction(dir);
-		HAL_Delay(50);
+		HAL_Delay(5);
 		uint16_t mm = 0;
 		if ((dir == 1)||(dir == 3)||(dir == 5)||(dir == 7)){
 			mm = (int)(((paths[0].distance[i])*104*1.4142))-45;
@@ -762,10 +762,45 @@ void race(){
 //		sprintf(send_buffer, "%d\n\n", mm);
 //		uart_transmit(send_buffer, strlen(send_buffer));
 		race_forward(mm);
-		HAL_Delay(50);
+		HAL_Delay(5);
 	}
 }
+void race_man(){
+	init_race_maze();
+	paths[0] = get_shortest_path();
+	paths[0] = compress_path(paths[0]);
+	Mouse.current_cell_x = 0;
+	Mouse.current_cell_y = 0;
+//	for (int i = 0; i<paths[0].len; i++){
+//		uint8_t dir = paths[0].direction[i];
+//		turn_to_direction(dir);
+//		HAL_Delay(5);
+//		uint16_t mm = 0;
+//		mm = (int)((paths[0].distance[i]*104));
+//		if (i==0) mm-=15;
+//		else if (paths[0].distance[i] != 1) mm-= 55;
+//
+////		sprintf(send_buffer, "%d\n\n", mm);
+////		uart_transmit(send_buffer, strlen(send_buffer));
+//		race_forward(mm);
+//		HAL_Delay(5);
+//	}
+	while(!((Mouse.current_cell_x == END_CELL_X) && (Mouse.current_cell_y == END_CELL_Y))){
+		if (measurements[1]<20) break;
+//		flood(race_maze,target_x, target_y);
 
+		HAL_Delay(10);
+
+		turn_to_direction(dir_of_lowest(race_maze, Mouse.current_cell_x,Mouse.current_cell_y));
+		HAL_Delay(10);
+
+		moveR(600,0);
+//		save_maze(exp_maze);
+//		print_maze();
+
+
+	}
+}
 
 
 
