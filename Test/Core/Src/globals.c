@@ -24,6 +24,8 @@ int32_t L_acc_error = 0;
 int32_t R_acc_error = 0;
 int32_t L_acc = 0;
 int32_t R_acc = 0;
+int32_t L_accacc = 0;
+int32_t R_accacc = 0;
 int32_t Dist_error_acc = 0;
 
 uint8_t measurements[3]; //L:M:R

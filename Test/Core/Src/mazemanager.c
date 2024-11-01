@@ -618,8 +618,7 @@ void init_race_maze(){ //copy across to race maze, blocking off unexplored cells
 //				uart_transmit(send_buffer, strlen(send_buffer));
 //				HAL_Delay(5);
 			}
-			race_maze[i][j].walls |= exp_maze[i][j].walls & 0xF;
-
+			race_maze[i][j].walls |= exp_maze[i][j].walls & 0xFF;
 		}
 	}
 	flood(race_maze, END_CELL_X, END_CELL_Y);

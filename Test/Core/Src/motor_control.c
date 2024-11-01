@@ -31,6 +31,8 @@ extern int32_t L_acc_error;
 extern int32_t R_acc_error;
 extern int32_t L_acc;
 extern int32_t R_acc;
+extern int32_t L_accacc;
+extern int32_t R_accacc;
 extern int32_t Dist_error_acc;
 
 extern Cell exp_maze[MAZE_CELL_WIDTH][MAZE_CELL_HEIGHT];

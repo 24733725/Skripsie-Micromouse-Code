@@ -162,12 +162,20 @@ int main(void)
 	L_speed_setpoint = 0;
 	while(measurements[1]>100) HAL_Delay(100);
 	while(measurements[1]<100) HAL_Delay(100);
+
+	uint8_t runcount = 0;
 	HAL_Delay(5000);
-	explore();
-	go_home();
-	HAL_Delay(2000);
-//	race();
-	race_man();
+	while(runcount<6 && HAL_GetTick()<600*1000){
+		explore();
+		go_home();
+		HAL_Delay(2000);
+	//	race();
+		race_man();
+		HAL_Delay(1000);
+		go_home();
+		HAL_Delay(1000);
+		runcount++;
+	}
 	uint32_t prev_ctr_loop_time = HAL_GetTick();
 	uint32_t prev_main_loop_time = HAL_GetTick();
 
